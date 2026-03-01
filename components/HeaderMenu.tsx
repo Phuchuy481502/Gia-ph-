@@ -9,6 +9,7 @@ import {
   GitMerge,
   Info,
   Network,
+  SettingsIcon,
   UserCircle,
   Users,
 } from "lucide-react";
@@ -132,6 +133,14 @@ export default function HeaderMenu({ isAdmin, userEmail }: HeaderMenuProps) {
               >
                 <Info className="size-4" />
                 Giới thiệu & Liên hệ
+              </Link>
+              <Link
+                href="/dashboard/settings"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+              >
+                <SettingsIcon className="size-4" />
+                Cài đặt
               </Link>
               <LogoutButton />
             </div>

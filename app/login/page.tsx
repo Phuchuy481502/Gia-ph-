@@ -23,6 +23,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
 
+  const [contactInfo, setContactInfo] = useState<string | null>(null);
   useEffect(() => {
     if (typeof window !== "undefined") {
       const hostname = window.location.hostname;
@@ -31,6 +32,19 @@ export default function LoginPage() {
         setEmail("giaphaos@homielab.com");
         setPassword("giaphaos");
       }
+      const loadData = async () => {
+        const { data, error } = await supabase
+          .from("settings")
+          .select("value")
+          .eq("key", "contact_info")
+          .single(); 
+        if (error) {
+          console.error("Failed to load contact_info:", error);
+          return;
+        }
+        setContactInfo(data?.value || null);
+      };
+      loadData();
     }
   }, []);
 
@@ -157,6 +171,11 @@ export default function LoginPage() {
                 ? "Đăng nhập để truy cập gia phả."
                 : "Tạo tài khoản thành viên mới."}
             </p>
+            {contactInfo && (
+              <p className="mt-2 text-[13px] text-stone-400 italic">
+                {contactInfo}
+              </p>
+            )}
             {isDemo && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}

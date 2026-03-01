@@ -1,10 +1,31 @@
 "use client";
 
+import { createClient } from "@/utils/supabase/client";
 import { motion } from "framer-motion";
-import { ArrowLeft, Info, Mail, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Info, Mail, ShieldAlert, User2Icon } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
 export default function AboutPage() {
+  const [contactInfo, setContactInfo] = useState<string | null>(null);
+
+  const supabase = useMemo(() => createClient(), []);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", "contact_info")
+        .single();
+      if (error) {
+        console.error("Failed to load contact_info:", error);
+        return;
+      }
+      setContactInfo(data?.value || null);
+    };
+    loadData();
+  }, []);
   return (
     <div className="min-h-screen flex flex-col bg-[#fafaf9] selection:bg-amber-200 selection:text-amber-900 relative">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-size-[24px_24px] pointer-events-none"></div>
@@ -23,6 +44,14 @@ export default function AboutPage() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           className="max-w-3xl w-full"
         >
+
+          {contactInfo && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-sm text-emerald-800">
+              <strong className="font-semibold">Thông tin liên hệ trang này:</strong>{" "}
+              {contactInfo}
+            </div>
+          )}
+
           <div className="bg-white rounded-3xl p-8 sm:p-12 shadow-sm border border-stone-200 mb-8 mt-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-3 bg-amber-100/50 text-amber-700 rounded-2xl">

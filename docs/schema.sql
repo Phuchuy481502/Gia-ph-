@@ -105,6 +105,17 @@ CREATE TABLE IF NOT EXISTS public.relationships (
   UNIQUE(person_a, person_b, type)
 );
 
+CREATE TABLE IF NOT EXISTS public.settings (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  key TEXT,
+  value TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.settings
+ADD CONSTRAINT settings_key_unique UNIQUE (key);
+
 -- ==========================================
 -- INDEXES
 -- ==========================================
@@ -184,6 +195,13 @@ DROP POLICY IF EXISTS "Admins can delete relationships" ON public.relationships;
 CREATE POLICY "Admins can insert relationships" ON public.relationships FOR INSERT TO authenticated WITH CHECK (public.is_admin());
 CREATE POLICY "Admins can update relationships" ON public.relationships FOR UPDATE TO authenticated USING (public.is_admin());
 CREATE POLICY "Admins can delete relationships" ON public.relationships FOR DELETE TO authenticated USING (public.is_admin());
+
+-- SETTINGS POLICIES
+DROP POLICY IF EXISTS "Allow public read settings" ON public.settings;
+DROP POLICY IF EXISTS "Allow authenticated update settings" ON public.settings;
+
+CREATE POLICY "Allow public read settings" ON public.settings FOR SELECT TO public USING (true);
+CREATE POLICY "Allow authenticated update settings" ON public.settings FOR UPDATE TO authenticated USING (public.is_admin());
 
 -- ==========================================
 -- TRIGGERS
@@ -421,3 +439,79 @@ BEGIN
     WHERE id = target_user_id;
 END;
 $$;
+
+-- Custom type for get_admin_settings
+DROP TYPE IF EXISTS public.admin_setting_data CASCADE;
+CREATE TYPE public.admin_setting_data AS (
+    id uuid,
+    key text,
+    value text,
+    created_at timestamptz
+);
+
+-- 6. Get List of Settings for Admin
+CREATE OR REPLACE FUNCTION public.get_admin_settings()
+RETURNS SETOF public.admin_setting_data
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin') THEN
+        RAISE EXCEPTION 'Access denied.';
+    END IF;
+
+    RETURN QUERY
+    SELECT a.id, a.key, a.value, a.created_at
+    FROM public.settings a
+    ORDER BY a.created_at DESC;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.admin_create_setting(
+  new_key text, 
+  new_value text
+)
+
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'auth', 'extensions'
+AS $function$
+DECLARE
+    new_id uuid;
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin') THEN
+        RAISE EXCEPTION 'Access denied.';
+    END IF;
+
+    new_id := gen_random_uuid();
+
+    INSERT INTO public.settings (
+        id, key, value, created_at
+    )
+    VALUES (
+        new_id, new_key, new_value, now()
+    );
+    RETURN new_id;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.delete_setting(target_setting_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin') THEN
+        RAISE EXCEPTION 'Access denied.';
+    END IF;
+
+    DELETE FROM public.settings WHERE id = target_setting_id;
+END;
+$$;
+
+INSERT INTO public.settings (key, value) 
+VALUES ('contact_info', 'Liên hệ: SDT:... FB: ...') 
+ON CONFLICT (key) DO NOTHING;

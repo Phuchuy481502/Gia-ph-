@@ -64,3 +64,12 @@ export interface PersonWithDetails extends Person {
   children?: Person[];
   parents?: Person[];
 }
+
+
+export interface Setting {
+  id: string;
+  key: string;
+  value: string;
+  created_at: string;
+  updated_at: string;
+}

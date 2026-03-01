@@ -66,7 +66,7 @@ export default function DashboardViews({
       <main className="flex-1 overflow-auto bg-stone-50/50 flex flex-col">
         {currentView !== "list" && persons.length > 0 && activeRootId && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2 w-full flex flex-col sm:flex-row flex-wrap items-center sm:justify-between gap-4 relative z-20">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="flex flex-row items-stretch sm:items-center gap-2">
               <RootSelector persons={persons} currentRootId={activeRootId} />
               <LevelGraphSelector />
             </div>

@@ -23,7 +23,7 @@ export default function LevelGraphSelector() {
       {/* Label + Select */}
       <div className="flex flex-col min-w-0 flex-1">
         <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wider leading-none mb-1">
-          Số thế hệ hiển thị
+          Số T.hệ
         </span>
         <select
           value={selectValue}

@@ -38,7 +38,7 @@ export default function FamilyTree({
   const [hideMales, setHideMales] = useState(false);
   const [hideFemales, setHideFemales] = useState(false);
 
-  const { showAvatar, setShowAvatar } = useDashboard();
+  const { showAvatar, setShowAvatar, levelGraph } = useDashboard();
   const filtersRef = useRef<HTMLDivElement>(null);
   const [portalNode, setPortalNode] = useState<HTMLElement | null>(null);
 
@@ -173,17 +173,24 @@ export default function FamilyTree({
     };
   };
 
+  const maxLevel = levelGraph ?? Infinity;
+
+  // depth: current generation level (1 = root)
   // Recursive function for rendering nodes
   // Tracks visited IDs to prevent infinite loops from circular relationships
   const renderTreeNode = (
     personId: string,
     visited: Set<string> = new Set(),
+    depth: number = 1,
   ): React.ReactNode => {
     if (visited.has(personId)) return null; // cycle guard
     visited.add(personId);
 
     const data = getTreeData(personId);
     if (!data.person) return null;
+
+    const hasMoreChildren = data.children.length > 0;
+    const canRenderChildren = depth < maxLevel;
 
     return (
       <li>
@@ -216,11 +223,11 @@ export default function FamilyTree({
         </div>
 
         {/* Render Children (if any) */}
-        {data.children.length > 0 && (
+        {hasMoreChildren && canRenderChildren && (
           <ul>
             {data.children.map((child) => (
               <React.Fragment key={child.id}>
-                {renderTreeNode(child.id, new Set(visited))}
+                {renderTreeNode(child.id, new Set(visited), depth + 1)}
               </React.Fragment>
             ))}
           </ul>

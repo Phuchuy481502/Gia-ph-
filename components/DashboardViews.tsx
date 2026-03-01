@@ -7,6 +7,7 @@ import MindmapTree from "@/components/MindmapTree";
 import RootSelector from "@/components/RootSelector";
 import { Person, Relationship } from "@/types";
 import { useMemo } from "react";
+import LevelGraphSelector from "./LevelGraphSelector";
 
 interface DashboardViewsProps {
   persons: Person[];
@@ -19,7 +20,7 @@ export default function DashboardViews({
   relationships,
   canEdit = false,
 }: DashboardViewsProps) {
-  const { view: currentView, rootId } = useDashboard();
+  const { view: currentView, rootId, levelGraph } = useDashboard();
 
   // Prepare map and roots for tree views
   const { personsMap, roots, defaultRootId } = useMemo(() => {
@@ -65,7 +66,10 @@ export default function DashboardViews({
       <main className="flex-1 overflow-auto bg-stone-50/50 flex flex-col">
         {currentView !== "list" && persons.length > 0 && activeRootId && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2 w-full flex flex-col sm:flex-row flex-wrap items-center sm:justify-between gap-4 relative z-20">
-            <RootSelector persons={persons} currentRootId={activeRootId} />
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <RootSelector persons={persons} currentRootId={activeRootId} />
+              <LevelGraphSelector />
+            </div>
             <div
               id="tree-toolbar-portal"
               className="flex items-center gap-2 flex-wrap justify-center"

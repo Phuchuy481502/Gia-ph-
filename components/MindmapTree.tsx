@@ -35,6 +35,7 @@ interface MindmapContextData {
   showAvatar: boolean;
   expandSignal: { type: "expand" | "collapse"; ts: number } | null;
   setMemberModalId: (id: string | null) => void;
+  maxLevel: number;
 }
 
 // Helper function to resolve tree connections for a person
@@ -107,6 +108,7 @@ const MindmapNode = memo(
     if (!data.person) return null;
 
     const hasChildren = data.children.length > 0;
+    const canRenderChildren = level + 1 < ctx.maxLevel;
 
     return (
       <div className={`relative py-1.5 ${level > 0 ? "pl-6" : "pl-0"}`}>
@@ -308,7 +310,7 @@ const MindmapNode = memo(
 
         {/* Children Container */}
         <AnimatePresence initial={false}>
-          {hasChildren && isExpanded && (
+          {hasChildren && isExpanded && canRenderChildren && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -342,7 +344,7 @@ export default function MindmapTree({
   roots,
   canEdit,
 }: MindmapTreeProps) {
-  const { showAvatar, setShowAvatar, setMemberModalId } = useDashboard();
+  const { showAvatar, setShowAvatar, setMemberModalId, levelGraph } = useDashboard();
   const [portalNode, setPortalNode] = useState<HTMLElement | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [hideSpouses, setHideSpouses] = useState(false);
@@ -387,6 +389,7 @@ export default function MindmapTree({
       showAvatar,
       expandSignal,
       setMemberModalId,
+      maxLevel: levelGraph ?? Infinity,
     }),
     [
       personsMap,
@@ -397,6 +400,7 @@ export default function MindmapTree({
       showAvatar,
       expandSignal,
       setMemberModalId,
+      levelGraph
     ],
   );
 

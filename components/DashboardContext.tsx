@@ -13,6 +13,8 @@ interface DashboardState {
   setView: (view: ViewMode) => void;
   rootId: string | null;
   setRootId: (id: string | null) => void;
+  levelGraph?: number | null;
+  setLevelGraph: (level: number | null) => void;
 }
 
 export const DashboardContext = createContext<DashboardState | undefined>(
@@ -25,6 +27,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [showAvatar, setShowAvatar] = useState<boolean>(true);
   const [view, setViewState] = useState<ViewMode>("list");
   const [rootId, setRootIdState] = useState<string | null>(null);
+  const [levelGraph, setLevelGraphState] = useState<number | null>(Infinity);
 
   // Initialize from URL once on mount (or when searchParams actually change from server init)
   // We use a ref or just simple effect
@@ -100,6 +103,10 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const setLevelGraph = (level: number | null) => {
+    setLevelGraphState(level);
+  };
+
   return (
     <DashboardContext.Provider
       value={{
@@ -111,6 +118,8 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         setView,
         rootId,
         setRootId,
+        levelGraph,
+        setLevelGraph,
       }}
     >
       {children}
@@ -132,6 +141,8 @@ export function useDashboard(): DashboardState {
       setView: () => {},
       rootId: null,
       setRootId: () => {},
+      levelGraph: null,
+      setLevelGraph: () => {},
     };
   }
   return context;

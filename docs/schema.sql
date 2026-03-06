@@ -489,10 +489,12 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_person_id ON public.audit_log(person_id
 -- RLS: Only authenticated users can insert; only admins can read
 ALTER TABLE public.audit_log ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Authenticated users can insert audit logs" ON public.audit_log;
 CREATE POLICY "Authenticated users can insert audit logs"
   ON public.audit_log FOR INSERT TO authenticated
   WITH CHECK (auth.uid() = changed_by);
 
+DROP POLICY IF EXISTS "Admins can read audit logs" ON public.audit_log;
 CREATE POLICY "Admins can read audit logs"
   ON public.audit_log FOR SELECT
   USING (
@@ -517,16 +519,19 @@ CREATE TABLE IF NOT EXISTS public.family_settings (
 ALTER TABLE public.family_settings ENABLE ROW LEVEL SECURITY;
 
 -- Authenticated users can read all settings (for admin UI)
+DROP POLICY IF EXISTS "Authenticated users can read family settings" ON public.family_settings;
 CREATE POLICY "Authenticated users can read family settings"
   ON public.family_settings FOR SELECT TO authenticated
   USING (true);
 
 -- Anonymous users can only read non-sensitive settings (for public share token validation)
+DROP POLICY IF EXISTS "Anon can read non-sensitive settings" ON public.family_settings;
 CREATE POLICY "Anon can read non-sensitive settings"
   ON public.family_settings FOR SELECT TO anon
   USING (setting_key NOT IN ('api_key_value', 'public_share_token'));
 
 -- Only admins can create/update/delete settings
+DROP POLICY IF EXISTS "Admins can manage family settings" ON public.family_settings;
 CREATE POLICY "Admins can manage family settings"
   ON public.family_settings FOR ALL TO authenticated
   USING (public.is_admin())
@@ -541,6 +546,17 @@ CREATE POLICY "Public can read persons when share is enabled"
     EXISTS (
       SELECT 1 FROM public.family_settings
       WHERE setting_key = 'public_share_enabled' AND setting_value = 'true'
+    )
+  );
+
+-- Allow anonymous users to read persons when public dashboard is enabled
+DROP POLICY IF EXISTS "Public can read persons when dashboard is enabled" ON public.persons;
+CREATE POLICY "Public can read persons when dashboard is enabled"
+  ON public.persons FOR SELECT TO anon
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.family_settings
+      WHERE setting_key = 'public_dashboard_enabled' AND setting_value = 'true'
     )
   );
 
@@ -568,6 +584,17 @@ CREATE POLICY "API can read relationships when API key is enabled"
     )
   );
 
+-- Allow anonymous users to read branches when public dashboard is enabled
+DROP POLICY IF EXISTS "Public can read branches when dashboard is enabled" ON public.branches;
+CREATE POLICY "Public can read branches when dashboard is enabled"
+  ON public.branches FOR SELECT TO anon
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.family_settings
+      WHERE setting_key = 'public_dashboard_enabled' AND setting_value = 'true'
+    )
+  );
+
 -- ==========================================
 -- PERSON PHOTOS (Gallery Ảnh Thành Viên)
 -- ==========================================
@@ -585,12 +612,15 @@ CREATE INDEX IF NOT EXISTS idx_person_photos_person_id ON person_photos(person_i
 
 ALTER TABLE person_photos ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Authenticated users can view photos" ON person_photos;
 CREATE POLICY "Authenticated users can view photos" ON person_photos FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "Editors and admins can insert photos" ON person_photos;
 CREATE POLICY "Editors and admins can insert photos" ON person_photos FOR INSERT TO authenticated WITH CHECK (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'editor'))
 );
 
+DROP POLICY IF EXISTS "Editors and admins can delete photos" ON person_photos;
 CREATE POLICY "Editors and admins can delete photos" ON person_photos FOR DELETE USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'editor'))
 );
@@ -701,6 +731,7 @@ CREATE INDEX IF NOT EXISTS idx_grave_records_person_id ON public.grave_records(p
 CREATE INDEX IF NOT EXISTS idx_grave_records_cemetery ON public.grave_records(cemetery_name);
 CREATE INDEX IF NOT EXISTS idx_grave_records_public ON public.grave_records(public_memorial) WHERE public_memorial = true;
 
+DROP TRIGGER IF EXISTS grave_records_updated_at ON public.grave_records;
 CREATE TRIGGER grave_records_updated_at
   BEFORE UPDATE ON public.grave_records
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -978,6 +1009,7 @@ DROP POLICY IF EXISTS "Editors can manage branches" ON public.branches;
 CREATE POLICY "Editors can manage branches" ON public.branches FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin','editor')))
   WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin','editor')));
+-- Note: anon SELECT policy for branches (public dashboard) is added in the family_settings section above
 
 -- user_preferences: each user manages their own
 DROP POLICY IF EXISTS "Users manage own preferences" ON public.user_preferences;
@@ -1051,6 +1083,22 @@ CREATE INDEX IF NOT EXISTS idx_announcements_pinned ON public.announcements(is_p
 -- Note: Add 'public_dashboard_enabled' key to family_settings via app settings UI
 -- INSERT INTO family_settings (setting_key, setting_value) VALUES ('public_dashboard_enabled', 'false') ON CONFLICT (setting_key) DO NOTHING;
 
+-- ============================================================
+-- Updated_at triggers for Phase 6+ tables
+-- ============================================================
+
+DROP TRIGGER IF EXISTS tr_branches_updated_at ON public.branches;
+CREATE TRIGGER tr_branches_updated_at
+  BEFORE UPDATE ON public.branches FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+DROP TRIGGER IF EXISTS tr_family_events_updated_at ON public.family_events;
+CREATE TRIGGER tr_family_events_updated_at
+  BEFORE UPDATE ON public.family_events FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+DROP TRIGGER IF EXISTS tr_announcements_updated_at ON public.announcements;
+CREATE TRIGGER tr_announcements_updated_at
+  BEFORE UPDATE ON public.announcements FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
 -- Phase 7: CCCD Unique ID
 ALTER TABLE public.persons ADD COLUMN IF NOT EXISTS national_id TEXT;
 ALTER TABLE public.persons ADD COLUMN IF NOT EXISTS national_id_verified BOOLEAN DEFAULT false;
@@ -1078,6 +1126,10 @@ CREATE TABLE IF NOT EXISTS public.branch_bots (
 
 CREATE INDEX IF NOT EXISTS idx_branch_bots_branch ON public.branch_bots(branch_id);
 CREATE INDEX IF NOT EXISTS idx_branch_bots_platform ON public.branch_bots(platform);
+
+DROP TRIGGER IF EXISTS tr_branch_bots_updated_at ON public.branch_bots;
+CREATE TRIGGER tr_branch_bots_updated_at
+  BEFORE UPDATE ON public.branch_bots FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
 ALTER TABLE public.branch_bots ENABLE ROW LEVEL SECURITY;
 
@@ -1175,6 +1227,10 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
 
 -- Only one active subscription at a time for single-family instance
 CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_active ON public.subscriptions(is_active) WHERE is_active = true;
+
+DROP TRIGGER IF EXISTS tr_subscriptions_updated_at ON public.subscriptions;
+CREATE TRIGGER tr_subscriptions_updated_at
+  BEFORE UPDATE ON public.subscriptions FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Admins manage subscriptions" ON public.subscriptions;

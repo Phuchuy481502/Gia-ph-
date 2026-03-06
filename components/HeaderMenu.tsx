@@ -49,13 +49,13 @@ export default function HeaderMenu() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-stone-200/60 py-2 z-50 overflow-hidden"
+            className="absolute right-0 mt-2 w-56 bg-white dark:bg-stone-800 rounded-2xl shadow-xl border border-stone-200/60 dark:border-stone-700 py-2 z-50 overflow-hidden"
           >
-            <div className="px-4 py-3 border-b border-stone-100 bg-stone-50/50">
-              <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-0.5">
+            <div className="px-4 py-3 border-b border-stone-100 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-900/50">
+              <p className="text-xs font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider mb-0.5">
                 Tài khoản
               </p>
-              <p className="text-sm font-medium text-stone-900 truncate">
+              <p className="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">
                 {userEmail}
               </p>
             </div>
@@ -64,7 +64,7 @@ export default function HeaderMenu() {
               <Link
                 href="/dashboard"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 dark:text-stone-300 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-stone-700 transition-colors"
               >
                 <Network className="size-4" />
                 Bảng điều khiển
@@ -73,7 +73,7 @@ export default function HeaderMenu() {
               <Link
                 href="/dashboard/timeline"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-sky-700 hover:bg-sky-50 transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 dark:text-stone-300 hover:text-sky-700 hover:bg-sky-50 dark:hover:bg-stone-700 transition-colors"
               >
                 <GitCommitVertical className="size-4" />
                 Dòng thời gian
@@ -83,7 +83,7 @@ export default function HeaderMenu() {
                 <Link
                   href="/dashboard/history"
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-violet-700 hover:bg-violet-50 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 dark:text-stone-300 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-stone-700 transition-colors"
                 >
                   <History className="size-4" />
                   Lịch sử
@@ -93,7 +93,7 @@ export default function HeaderMenu() {
               <Link
                 href="/about"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-rose-700 hover:bg-rose-50 transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 dark:text-stone-300 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-stone-700 transition-colors"
               >
                 <Info className="size-4" />
                 Giới thiệu

@@ -1,4 +1,5 @@
 import config from "@/app/config";
+import { maskName, shouldMask } from "@/utils/privacy";
 import { createPublicClient } from "@/utils/supabase/public";
 import { timingSafeEqual } from "crypto";
 import {
@@ -166,7 +167,7 @@ export default async function PublicFamilyTreePage({
                       <span
                         className={`font-medium text-stone-900 truncate ${person.is_deceased ? "line-through text-stone-400" : ""}`}
                       >
-                        {person.full_name}
+                        {shouldMask(person.is_deceased) ? maskName(person.full_name) : person.full_name}
                       </span>
                       {person.is_in_law && (
                         <span className="text-xs bg-purple-50 text-purple-600 border border-purple-100 px-1.5 py-0.5 rounded-full">

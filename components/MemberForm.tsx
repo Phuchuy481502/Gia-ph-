@@ -2,20 +2,24 @@
 
 import { logAudit } from "@/utils/auditLog";
 import RichNoteEditor from "@/components/RichNoteEditor";
-import { Gender, Person } from "@/types";
+import { Gender, Person, PrivacyLevel, Religion } from "@/types";
 import { createClient } from "@/utils/supabase/client";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import {
   AlertCircle,
   AlertTriangle,
+  BookOpen,
   Briefcase,
+  Cross,
   ExternalLink,
+  Eye,
   Image as ImageIcon,
   Loader2,
   Lock,
   MapPin,
   Phone,
   Settings2,
+  Star,
   Trash2,
   User,
 } from "lucide-react";
@@ -26,6 +30,7 @@ interface MemberFormProps {
   initialData?: Person;
   isEditing?: boolean;
   isAdmin?: boolean;
+  branches?: Array<{ id: string; name: string }>;
   /** Called with the saved person's ID after a successful save. Overrides default router.push. */
   onSuccess?: (personId: string) => void;
   /** Called when user clicks Cancel. Overrides default router.back(). */
@@ -36,6 +41,7 @@ export default function MemberForm({
   initialData,
   isEditing = false,
   isAdmin = false,
+  branches = [],
   onSuccess,
   onCancel,
 }: MemberFormProps) {
@@ -89,6 +95,19 @@ export default function MemberForm({
   );
 
   const [note, setNote] = useState(initialData?.note || "");
+
+  // Extended profile fields
+  const [birthName, setBirthName] = useState(initialData?.birth_name || "");
+  const [commonName, setCommonName] = useState(initialData?.common_name || "");
+  const [religion, setReligion] = useState<Religion>(initialData?.religion || "none");
+  const [saintName, setSaintName] = useState(initialData?.saint_name || "");
+  const [religiousTitle, setReligiousTitle] = useState(initialData?.religious_title || "");
+  const [civilTitle, setCivilTitle] = useState(initialData?.civil_title || "");
+  const [careerDescription, setCareerDescription] = useState(initialData?.career_description || "");
+  const [privacyLevel, setPrivacyLevel] = useState<PrivacyLevel>(
+    initialData?.privacy_level ?? (initialData?.is_deceased ? "public" : "masked")
+  );
+  const [branchId, setBranchId] = useState(initialData?.branch_id || "");
 
   // Private fields
   const [phoneNumber, setPhoneNumber] = useState(
@@ -232,6 +251,15 @@ export default function MemberForm({
         other_names: otherNames || null,
         avatar_url: finalAvatarUrl || null,
         note: note || null,
+        birth_name: birthName || null,
+        common_name: commonName || null,
+        religion: religion || "none",
+        saint_name: (religion === "catholic" && saintName) ? saintName : null,
+        religious_title: religiousTitle || null,
+        civil_title: civilTitle || null,
+        career_description: careerDescription || null,
+        privacy_level: isDeceased ? "public" : privacyLevel,
+        branch_id: branchId || null,
       };
 
       let personId = initialData?.id;
@@ -729,6 +757,120 @@ export default function MemberForm({
         </div>
       </motion.div>
 
+      {/* Extended Profile Section */}
+      <motion.div
+        variants={formSectionVariants}
+        initial="hidden"
+        animate="show"
+        transition={{ delay: 0.05 }}
+        className="bg-white/80 p-5 sm:p-8 rounded-2xl shadow-sm border border-stone-200/80"
+      >
+        <h3 className="text-lg sm:text-xl font-serif font-bold text-stone-800 mb-6 border-b border-stone-100 pb-4 flex items-center gap-2">
+          <BookOpen className="size-5 text-amber-600" />
+          Hồ sơ mở rộng
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-semibold text-stone-700 mb-1.5">
+              Tên khai sinh
+            </label>
+            <input
+              type="text"
+              value={birthName}
+              onChange={(e) => setBirthName(e.target.value)}
+              className={inputClasses}
+              placeholder="Tên đầy đủ theo giấy khai sinh..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-stone-700 mb-1.5">
+              Tên gọi thường
+            </label>
+            <input
+              type="text"
+              value={commonName}
+              onChange={(e) => setCommonName(e.target.value)}
+              className={inputClasses}
+              placeholder="Tên thường gọi trong gia đình..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-stone-700 mb-1.5">
+              <span className="flex items-center gap-1.5"><Cross className="size-3.5" />Tôn giáo</span>
+            </label>
+            <div className="relative">
+              <select
+                value={religion}
+                onChange={(e) => setReligion(e.target.value as Religion)}
+                className={`${inputClasses} appearance-none`}
+              >
+                <option value="none">Không theo tôn giáo</option>
+                <option value="buddhist">Phật giáo</option>
+                <option value="catholic">Công giáo (Thiên Chúa)</option>
+                <option value="protestant">Tin lành</option>
+                <option value="islam">Hồi giáo</option>
+                <option value="cao_dai">Cao Đài</option>
+                <option value="hoa_hao">Hòa Hảo</option>
+                <option value="other">Tôn giáo khác</option>
+              </select>
+            </div>
+          </div>
+
+          {religion === "catholic" && (
+            <div>
+              <label className="block text-sm font-semibold text-stone-700 mb-1.5">
+                Tên thánh
+              </label>
+              <input
+                type="text"
+                value={saintName}
+                onChange={(e) => setSaintName(e.target.value)}
+                className={inputClasses}
+                placeholder="Ví dụ: Maria, Giuse, Gioan..."
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-semibold text-stone-700 mb-1.5">
+              <span className="flex items-center gap-1.5"><Star className="size-3.5" />Chức sắc tôn giáo</span>
+            </label>
+            <input
+              type="text"
+              value={religiousTitle}
+              onChange={(e) => setReligiousTitle(e.target.value)}
+              className={inputClasses}
+              placeholder="Ví dụ: Linh mục, Hòa thượng, Mục sư..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-stone-700 mb-1.5">
+              <span className="flex items-center gap-1.5"><Briefcase className="size-3.5" />Chức danh / Chức vụ</span>
+            </label>
+            <input
+              type="text"
+              value={civilTitle}
+              onChange={(e) => setCivilTitle(e.target.value)}
+              className={inputClasses}
+              placeholder="Ví dụ: Cán bộ, Bộ trưởng, Giáo viên..."
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-stone-700 mb-1.5">
+              Mô tả sự nghiệp / Tiểu sử cuộc đời
+            </label>
+            <RichNoteEditor
+              value={careerDescription}
+              onChange={setCareerDescription}
+              placeholder="Quá trình công tác, thành tích, đóng góp..."
+            />
+          </div>
+        </div>
+      </motion.div>
+
       {/* Private Information Section (Admin Only) */}
       {isAdmin && (
         <motion.div
@@ -795,6 +937,50 @@ export default function MemberForm({
                 placeholder="Địa chỉ cư trú..."
                 className={inputClasses}
               />
+            </div>
+
+            {branches.length > 0 && (
+              <div className="md:col-span-2">
+                <label className="flex items-center gap-1.5 text-sm font-semibold text-amber-900/80 mb-1.5">
+                  Chi / Nhánh
+                </label>
+                <div className="relative">
+                  <select
+                    value={branchId}
+                    onChange={(e) => setBranchId(e.target.value)}
+                    className={`${inputClasses} appearance-none`}
+                  >
+                    <option value="">— Chưa phân chi —</option>
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            <div className="md:col-span-2">
+              <label className="flex items-center gap-1.5 text-sm font-semibold text-amber-900/80 mb-1.5">
+                <Eye className="size-4" /> Chế độ hiển thị công khai
+              </label>
+              <div className="relative">
+                <select
+                  value={isDeceased ? "public" : privacyLevel}
+                  onChange={(e) => setPrivacyLevel(e.target.value as PrivacyLevel)}
+                  disabled={isDeceased}
+                  className={`${inputClasses} appearance-none disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed`}
+                >
+                  <option value="public">Công khai — Hiển thị đầy đủ tên</option>
+                  <option value="masked">Ẩn một phần — Che phần cuối tên (mặc định)</option>
+                  <option value="private">Riêng tư — Ẩn hoàn toàn với khách</option>
+                </select>
+              </div>
+              {isDeceased && (
+                <p className="text-[11px] font-medium text-amber-700 mt-1.5 flex items-center gap-1">
+                  <AlertCircle className="size-3" />
+                  Người đã mất luôn hiển thị công khai
+                </p>
+              )}
             </div>
           </div>
         </motion.div>

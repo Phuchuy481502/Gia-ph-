@@ -1,10 +1,11 @@
 "use client";
 
 import DefaultAvatar from "@/components/DefaultAvatar";
+import GraveSection from "@/components/GraveSection";
 import MemberPhotoGallery from "@/components/MemberPhotoGallery";
 import NoteRenderer from "@/components/NoteRenderer";
 import RelationshipManager from "@/components/RelationshipManager";
-import { Person } from "@/types";
+import { Person, GraveRecord } from "@/types";
 import {
   calculateAge,
   formatDisplayDate,
@@ -20,6 +21,7 @@ import {
   Info,
   Leaf,
   MapPin,
+  Moon,
   Phone,
   Users,
 } from "lucide-react";
@@ -32,6 +34,8 @@ interface MemberDetailContentProps {
   privateData: Record<string, unknown> | null;
   isAdmin: boolean;
   canEdit?: boolean;
+  graveRecord?: GraveRecord | null;
+  persons?: Array<{ id: string; full_name: string }>;
 }
 
 export default function MemberDetailContent({
@@ -39,6 +43,8 @@ export default function MemberDetailContent({
   privateData,
   isAdmin,
   canEdit = false,
+  graveRecord = null,
+  persons = [],
 }: MemberDetailContentProps) {
   const [isNoteExpanded, setIsNoteExpanded] = useState(false);
   const fullPerson = { ...person, ...privateData };
@@ -391,6 +397,23 @@ export default function MemberDetailContent({
                 <MemberPhotoGallery personId={person.id} canEdit={canEdit} />
               </div>
             </motion.section>
+
+            {(person.is_deceased || isDeceased) && (
+              <motion.section variants={itemVariants}>
+                <h2 className="text-base sm:text-lg font-bold text-stone-800 mb-4 flex items-center gap-2">
+                  <Moon className="size-5 text-amber-600" />
+                  Mộ phần
+                </h2>
+                <div className="bg-white/80 backdrop-blur-sm p-4 sm:p-6 rounded-2xl border border-stone-200/60 shadow-sm">
+                  <GraveSection
+                    personId={person.id}
+                    initialRecord={graveRecord}
+                    canEdit={canEdit}
+                    persons={persons}
+                  />
+                </div>
+              </motion.section>
+            )}
           </div>
 
           {/* Sidebar / Private Info */}

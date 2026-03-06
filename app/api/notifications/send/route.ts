@@ -142,6 +142,15 @@ function computeUpcomingEvents(
   return events;
 }
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function buildEmailHtml(events: UpcomingEvent[]): string {
   const rows = events
     .map((ev) => {
@@ -157,8 +166,8 @@ function buildEmailHtml(events: UpcomingEvent[]): string {
       <tr>
         <td style="padding: 10px 8px; border-bottom: 1px solid #f5f5f4; font-size: 20px; width: 36px;">${icon}</td>
         <td style="padding: 10px 8px; border-bottom: 1px solid #f5f5f4;">
-          <strong style="color: #1c1917;">${ev.personName}</strong>
-          <span style="color: #78716c; font-size: 13px; margin-left: 6px;">${typeLabel} — ${ev.label}</span>
+          <strong style="color: #1c1917;">${escapeHtml(ev.personName)}</strong>
+          <span style="color: #78716c; font-size: 13px; margin-left: 6px;">${typeLabel} — ${escapeHtml(ev.label)}</span>
         </td>
         <td style="padding: 10px 8px; border-bottom: 1px solid #f5f5f4; white-space: nowrap; font-size: 13px; color: #f59e0b; font-weight: 600;">
           ${when}

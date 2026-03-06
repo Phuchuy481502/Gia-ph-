@@ -2,7 +2,9 @@ import { getSupabase } from "@/utils/supabase/queries";
 import { redirect } from "next/navigation";
 import { getUser } from "@/utils/supabase/queries";
 import TimelineList, { TimelineEvent } from "@/components/TimelineList";
+import ActivityFeed from "@/components/ActivityFeed";
 import { GitCommitVertical } from "lucide-react";
+import { ActivityFeedItem } from "@/types";
 
 export default async function TimelinePage() {
   const user = await getUser();
@@ -10,7 +12,7 @@ export default async function TimelinePage() {
 
   const supabase = await getSupabase();
 
-  const [{ data: persons }, { data: customEvents }] = await Promise.all([
+  const [{ data: persons }, { data: customEvents }, { data: activityFeed }] = await Promise.all([
     supabase
       .from("persons")
       .select(
@@ -21,6 +23,11 @@ export default async function TimelinePage() {
       .from("events")
       .select("id, title, event_date, event_type, person_id")
       .order("event_date", { ascending: true }),
+    supabase
+      .from("activity_feed")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(30),
   ]);
 
   const events: TimelineEvent[] = [];
@@ -99,6 +106,17 @@ export default async function TimelinePage() {
         </div>
 
         <TimelineList events={events} generations={generations} />
+
+        {/* Activity Feed */}
+        {(activityFeed ?? []).length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-xl font-serif font-bold text-stone-700 mb-4 flex items-center gap-2">
+              <span className="w-8 h-px bg-stone-300 rounded-full" />
+              Hoạt động gần đây
+            </h2>
+            <ActivityFeed items={(activityFeed ?? []) as ActivityFeedItem[]} />
+          </div>
+        )}
       </div>
     </main>
   );

@@ -114,6 +114,15 @@ export default async function DashboardLaunchpad() {
     //   hoverColor: "hover:border-emerald-400 hover:shadow-emerald-100",
     // },
     {
+      title: "Sự kiện họ tộc",
+      description: "Giỗ họ, họp họ, đám cưới và các sự kiện gia tộc",
+      icon: <CalendarDays className="size-8 text-emerald-600" />,
+      href: "/dashboard/family-events",
+      bgColor: "bg-emerald-50",
+      borderColor: "border-emerald-200/60",
+      hoverColor: "hover:border-emerald-400 hover:shadow-emerald-100",
+    },
+    {
       title: "Tra cứu danh xưng",
       description: "Hệ thống gọi tên họ hàng chuẩn xác",
       icon: <GitMerge className="size-8 text-blue-600" />,

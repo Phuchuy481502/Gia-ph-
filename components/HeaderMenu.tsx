@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, GitCommitVertical, History, Info, Map, Network, Settings, UserCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import LogoutButton from "./LogoutButton";
@@ -9,6 +10,7 @@ import { useUser } from "./UserProvider";
 
 export default function HeaderMenu() {
   const { user, isAdmin } = useUser();
+  const t = useTranslations();
   const userEmail = user?.email;
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -53,7 +55,7 @@ export default function HeaderMenu() {
           >
             <div className="px-4 py-3 border-b border-stone-100 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-900/50">
               <p className="text-xs font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider mb-0.5">
-                Tài khoản
+                {t("common.account")}
               </p>
               <p className="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">
                 {userEmail}
@@ -67,7 +69,7 @@ export default function HeaderMenu() {
                 className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 dark:text-stone-300 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-stone-700 transition-colors"
               >
                 <Network className="size-4" />
-                Bảng điều khiển
+                {t("nav.dashboard")}
               </Link>
 
               <Link
@@ -76,7 +78,7 @@ export default function HeaderMenu() {
                 className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 dark:text-stone-300 hover:text-sky-700 hover:bg-sky-50 dark:hover:bg-stone-700 transition-colors"
               >
                 <GitCommitVertical className="size-4" />
-                Dòng thời gian
+                {t("nav.timeline")}
               </Link>
 
               <Link
@@ -85,7 +87,7 @@ export default function HeaderMenu() {
                 className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 dark:text-stone-300 hover:text-teal-700 hover:bg-teal-50 dark:hover:bg-stone-700 transition-colors"
               >
                 <Map className="size-4" />
-                Bản đồ
+                {t("nav.map")}
               </Link>
 
               {isAdmin && (
@@ -95,7 +97,7 @@ export default function HeaderMenu() {
                   className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 dark:text-stone-300 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-stone-700 transition-colors"
                 >
                   <History className="size-4" />
-                  Lịch sử
+                  {t("nav.history")}
                 </Link>
               )}
 
@@ -106,7 +108,7 @@ export default function HeaderMenu() {
                   className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 dark:text-stone-300 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-stone-700 transition-colors"
                 >
                   <Settings className="size-4" />
-                  Cài đặt
+                  {t("nav.settings")}
                 </Link>
               )}
 
@@ -116,7 +118,7 @@ export default function HeaderMenu() {
                 className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 dark:text-stone-300 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-stone-700 transition-colors"
               >
                 <Info className="size-4" />
-                Giới thiệu
+                {t("nav.about")}
               </Link>
 
               <LogoutButton />

@@ -4,12 +4,15 @@ import config from "@/app/config";
 import { useTheme } from "@/components/ThemeProvider";
 import GlobalSearch from "@/components/GlobalSearch";
 import HeaderMenu from "@/components/HeaderMenu";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 import { Moon, Sun } from "lucide-react";
 
 export default function DashboardHeader() {
   const { theme, toggle } = useTheme();
+  const t = useTranslations("common");
 
   return (
     <header className="sticky top-0 z-30 bg-white/80 dark:bg-stone-900/95 border-b border-stone-200 dark:border-stone-700 shadow-sm transition-all duration-200">
@@ -35,9 +38,10 @@ export default function DashboardHeader() {
         </div>
         <div className="flex items-center gap-3">
           <GlobalSearch />
+          <LanguageSwitcher />
           <button
             onClick={toggle}
-            title={theme === "dark" ? "Chế độ sáng" : "Chế độ tối"}
+            title={theme === "dark" ? t("lightMode") : t("darkMode")}
             className="p-2 rounded-full hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-500 dark:text-stone-400 transition-colors"
           >
             {theme === "dark" ? (

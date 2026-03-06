@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale } from "next-intl/server";
 import config from "./config";
 import ThemeProvider from "@/components/ThemeProvider";
 import "./globals.css";
@@ -17,13 +19,14 @@ export const metadata: Metadata = {
   description: config.siteName,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
   return (
-    <html lang="vi" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#d97706" />
@@ -44,7 +47,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${playfair.variable} font-sans antialiased relative dark:bg-stone-900 dark:text-stone-100`}
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+            <NextIntlClientProvider>{children}</NextIntlClientProvider>
+          </ThemeProvider>
       </body>
     </html>
   );

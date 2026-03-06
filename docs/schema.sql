@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS public.persons (
   birth_order INT,
   generation INT,
   other_names TEXT,
+  place_of_birth TEXT,
   avatar_url TEXT,
   note TEXT,
   

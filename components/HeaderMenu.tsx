@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, GitCommitVertical, History, Info, Network, Settings, UserCircle } from "lucide-react";
+import { ChevronDown, GitCommitVertical, History, Info, Map, Network, Settings, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import LogoutButton from "./LogoutButton";
@@ -77,6 +77,15 @@ export default function HeaderMenu() {
               >
                 <GitCommitVertical className="size-4" />
                 Dòng thời gian
+              </Link>
+
+              <Link
+                href="/dashboard/map"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 dark:text-stone-300 hover:text-teal-700 hover:bg-teal-50 dark:hover:bg-stone-700 transition-colors"
+              >
+                <Map className="size-4" />
+                Bản đồ
               </Link>
 
               {isAdmin && (

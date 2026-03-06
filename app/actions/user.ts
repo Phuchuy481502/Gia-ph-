@@ -84,3 +84,54 @@ export async function toggleUserStatus(userId: string, newStatus: boolean) {
   revalidatePath("/dashboard/users");
   return { success: true };
 }
+
+export async function approveUser(userId: string) {
+  const supabase = await getSupabase();
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      account_status: "active",
+      is_active: true,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/users");
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+export async function rejectUser(userId: string) {
+  const supabase = await getSupabase();
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      account_status: "rejected",
+      is_active: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/users");
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+export async function batchApproveUsers(userIds: string[]) {
+  const supabase = await getSupabase();
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      account_status: "active",
+      is_active: true,
+      updated_at: new Date().toISOString(),
+    })
+    .in("id", userIds);
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/users");
+  revalidatePath("/dashboard");
+  return { success: true };
+}

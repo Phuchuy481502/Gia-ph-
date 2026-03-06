@@ -9,8 +9,11 @@ import {
   Database,
   Flower2,
   GitMerge,
+  Heart,
+  Layers,
   Network,
   Star,
+  UserCheck,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -41,16 +44,49 @@ export default async function DashboardLaunchpad() {
   const isAdmin = await getIsAdmin();
   const supabase = await getSupabase();
 
-  /* ── Fetch events data ────────────────────────────────────────── */
+  /* ── Fetch members + events data ─────────────────────────────── */
   const { data: persons } = await supabase
     .from("persons")
     .select(
-      "id, full_name, birth_year, birth_month, birth_day, death_year, death_month, death_day, is_deceased",
+      "id, full_name, birth_year, birth_month, birth_day, death_year, death_month, death_day, is_deceased, gender, created_at",
     );
 
   const { data: customEvents } = await supabase
     .from("custom_events")
     .select("id, name, content, event_date, location, created_by");
+
+  /* ── Quick stats ──────────────────────────────────────────────── */
+  const totalMembers = persons?.length ?? 0;
+  const totalLiving = persons?.filter((p) => !p.is_deceased).length ?? 0;
+  const totalDeceased = persons?.filter((p) => p.is_deceased).length ?? 0;
+  const generations = new Set(
+    (persons ?? [])
+      .map((p) => (p as { generation?: number }).generation)
+      .filter(Boolean),
+  );
+
+  /* ── Pending approvals (admin only) ──────────────────────────── */
+  let pendingCount = 0;
+  if (isAdmin) {
+    const { count } = await supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("account_status", "pending");
+    pendingCount = count ?? 0;
+  }
+
+  /* ── Recent members ───────────────────────────────────────────── */
+  const recentMembers = (persons ?? [])
+    .sort(
+      (a, b) =>
+        new Date(
+          (b as { created_at?: string }).created_at ?? 0,
+        ).getTime() -
+        new Date(
+          (a as { created_at?: string }).created_at ?? 0,
+        ).getTime(),
+    )
+    .slice(0, 4);
 
   const allEvents = computeEvents(persons ?? [], customEvents ?? []);
   const upcomingEvents = allEvents.filter(
@@ -58,8 +94,6 @@ export default async function DashboardLaunchpad() {
   );
 
   const lunar = getTodayLunar();
-
-  /* ── Feature lists ────────────────────────────────────────────── */
   const publicFeatures = [
     {
       title: "Cây gia phả",
@@ -140,9 +174,52 @@ export default async function DashboardLaunchpad() {
 
   return (
     <main className="flex-1 flex flex-col p-4 sm:p-8 max-w-7xl mx-auto w-full">
-      {/* <div className="mb-8 sm:mb-12 text-center sm:text-left">
-        <h1 className="title">Bảng điều khiển</h1>
-      </div> */}
+      {/* ── Quick Stats Row ─────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        {[
+          { label: "Thành viên", value: totalMembers, icon: Users, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
+          { label: "Còn sống", value: totalLiving, icon: Heart, color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-100" },
+          { label: "Đã mất", value: totalDeceased, icon: Flower2, color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100" },
+          { label: "Thế hệ", value: generations.size, icon: Layers, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
+        ].map((s) => (
+          <div
+            key={s.label}
+            className={`flex flex-col items-center gap-2 p-4 rounded-2xl bg-white border ${s.border} shadow-sm`}
+          >
+            <div className={`p-2 rounded-xl ${s.bg}`}>
+              <s.icon className={`size-4 ${s.color}`} />
+            </div>
+            <span className="text-2xl font-bold text-stone-800">{s.value}</span>
+            <span className="text-xs text-stone-500 font-medium">{s.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Admin: Pending Approvals Badge ─────────────────── */}
+      {isAdmin && pendingCount > 0 && (
+        <Link
+          href="/dashboard/users"
+          className="flex items-center gap-4 p-4 mb-6 rounded-2xl bg-amber-50 border border-amber-200 hover:border-amber-400 transition-all group"
+        >
+          <div className="relative">
+            <div className="size-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700">
+              <UserCheck className="size-5" />
+            </div>
+            <span className="absolute -top-1 -right-1 size-5 bg-rose-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+              {pendingCount}
+            </span>
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-amber-900 text-sm">
+              {pendingCount} tài khoản chờ phê duyệt
+            </p>
+            <p className="text-xs text-amber-700/70">
+              Nhấp để xem và phê duyệt thành viên mới
+            </p>
+          </div>
+          <ArrowRight className="size-4 text-amber-400 group-hover:text-amber-600 group-hover:translate-x-1 transition-all" />
+        </Link>
+      )}
 
       {/* ── Today's Date & Upcoming Events ─────────────────── */}
       <Link
@@ -244,6 +321,38 @@ export default async function DashboardLaunchpad() {
           </div>
         </div>
       </Link>
+
+      {/* ── Recent Members ────────────────────────────────── */}
+      {recentMembers.length > 0 && (
+        <div className="bg-white rounded-2xl border border-stone-200/60 shadow-sm overflow-hidden mb-10">
+          <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
+            <h2 className="font-semibold text-stone-800 text-sm flex items-center gap-2">
+              <Users className="size-4 text-stone-400" />
+              Thành viên mới nhất
+            </h2>
+            <Link href="/dashboard/members" className="text-xs text-amber-600 hover:underline font-medium flex items-center gap-1">
+              Xem tất cả <ArrowRight className="size-3" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-stone-50">
+            {recentMembers.map((m) => (
+              <Link
+                key={m.id}
+                href={`/dashboard/members/${m.id}`}
+                className="flex flex-col items-center gap-2 p-4 hover:bg-stone-50/50 transition-colors"
+              >
+                <div className="size-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 text-sm font-bold shrink-0">
+                  {m.is_deceased ? "✝" : m.full_name?.[0] ?? "?"}
+                </div>
+                <div className="text-center min-w-0 w-full">
+                  <p className="text-xs font-semibold text-stone-700 truncate">{m.full_name}</p>
+                  {m.birth_year && <p className="text-xs text-stone-400">{m.birth_year}</p>}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Feature Grid ──────────────────────────────────── */}
       <div className="space-y-12">

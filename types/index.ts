@@ -293,3 +293,25 @@ export interface GraveRecordWithDetails extends GraveRecord {
   caretaker?: Person | null;
   branch_head?: Person | null;
 }
+
+// ============================================================
+// Phase 7: Public Dashboard + Announcements
+// ============================================================
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string | null;
+  is_pinned: boolean;
+  expires_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PublicFamilyStats {
+  totalMembers: number;
+  totalGenerations: number;
+  totalBranches: number;
+  totalDeceased: number;
+  totalLiving: number;
+}

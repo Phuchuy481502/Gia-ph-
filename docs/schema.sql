@@ -584,17 +584,6 @@ CREATE POLICY "API can read relationships when API key is enabled"
     )
   );
 
--- Allow anonymous users to read branches when public dashboard is enabled
-DROP POLICY IF EXISTS "Public can read branches when dashboard is enabled" ON public.branches;
-CREATE POLICY "Public can read branches when dashboard is enabled"
-  ON public.branches FOR SELECT TO anon
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.family_settings
-      WHERE setting_key = 'public_dashboard_enabled' AND setting_value = 'true'
-    )
-  );
-
 -- ==========================================
 -- PERSON PHOTOS (Gallery Ảnh Thành Viên)
 -- ==========================================
@@ -1009,7 +998,16 @@ DROP POLICY IF EXISTS "Editors can manage branches" ON public.branches;
 CREATE POLICY "Editors can manage branches" ON public.branches FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin','editor')))
   WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin','editor')));
--- Note: anon SELECT policy for branches (public dashboard) is added in the family_settings section above
+-- anon can read branches when public dashboard is enabled
+DROP POLICY IF EXISTS "Public can read branches when dashboard is enabled" ON public.branches;
+CREATE POLICY "Public can read branches when dashboard is enabled"
+  ON public.branches FOR SELECT TO anon
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.family_settings
+      WHERE setting_key = 'public_dashboard_enabled' AND setting_value = 'true'
+    )
+  );
 
 -- user_preferences: each user manages their own
 DROP POLICY IF EXISTS "Users manage own preferences" ON public.user_preferences;

@@ -15,10 +15,18 @@ END $$;
 
 -- Relationship types between family members
 DO $$ BEGIN
-    CREATE TYPE public.relationship_type_enum AS ENUM ('marriage', 'biological_child', 'adopted_child');
+    CREATE TYPE public.relationship_type_enum AS ENUM (
+      'marriage', 'biological_child', 'adopted_child',
+      'step_parent', 'sibling', 'half_sibling', 'godparent'
+    );
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
+-- Add new values to existing databases (idempotent)
+DO $$ BEGIN ALTER TYPE public.relationship_type_enum ADD VALUE IF NOT EXISTS 'step_parent'; EXCEPTION WHEN others THEN null; END $$;
+DO $$ BEGIN ALTER TYPE public.relationship_type_enum ADD VALUE IF NOT EXISTS 'sibling'; EXCEPTION WHEN others THEN null; END $$;
+DO $$ BEGIN ALTER TYPE public.relationship_type_enum ADD VALUE IF NOT EXISTS 'half_sibling'; EXCEPTION WHEN others THEN null; END $$;
+DO $$ BEGIN ALTER TYPE public.relationship_type_enum ADD VALUE IF NOT EXISTS 'godparent'; EXCEPTION WHEN others THEN null; END $$;
 
 -- System user roles
 DO $$ BEGIN

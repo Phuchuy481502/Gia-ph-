@@ -2,7 +2,11 @@ export type Gender = "male" | "female" | "other";
 export type RelationshipType =
   | "marriage"
   | "biological_child"
-  | "adopted_child";
+  | "adopted_child"
+  | "step_parent"
+  | "sibling"
+  | "half_sibling"
+  | "godparent";
 export type UserRole = "admin" | "editor" | "member";
 
 export interface Profile {

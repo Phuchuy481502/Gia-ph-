@@ -9,6 +9,7 @@ import {
   Download,
   Filter,
   Plus,
+  Printer,
   Search,
   Square,
   Trash2,
@@ -18,6 +19,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useDashboard } from "./DashboardContext";
+import PrintMemberList from "./PrintMemberList";
 import { useUser } from "./UserProvider";
 
 export default function DashboardMemberList({
@@ -282,16 +284,23 @@ export default function DashboardMemberList({
               {canEdit && !bulkMode && (
                 <button
                   onClick={() => setBulkMode(true)}
-                  className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-stone-200/80 bg-white/90 text-stone-600 hover:border-amber-400 hover:text-amber-600 text-sm font-medium shadow-sm transition-all"
+                  className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-stone-200/80 bg-white/90 text-stone-600 hover:border-amber-400 hover:text-amber-600 text-sm font-medium shadow-sm transition-all no-print"
                 >
                   <CheckSquare className="size-4" />
                   Chọn nhiều
                 </button>
               )}
+              <button
+                onClick={() => window.print()}
+                className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-stone-200/80 bg-white/90 text-stone-600 hover:border-amber-400 hover:text-amber-600 text-sm font-medium shadow-sm transition-all no-print"
+              >
+                <Printer className="size-4" />
+                <span className="hidden sm:inline">In danh sách</span>
+              </button>
               {canEdit && (
                 <button
                   onClick={() => setShowCreateMember(true)}
-                  className="btn-primary"
+                  className="btn-primary no-print"
                 >
                   <Plus className="size-4" strokeWidth={2.5} />
                   Thêm thành viên
@@ -488,6 +497,8 @@ export default function DashboardMemberList({
             : "Chưa có thành viên nào. Hãy thêm thành viên đầu tiên."}
         </div>
       )}
+
+      <PrintMemberList persons={sortedPersons} />
     </>
   );
 }

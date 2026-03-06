@@ -6,6 +6,34 @@ Format theo [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.3.0] — Chưa phát hành
+
+> **Phase 7 — Public Dashboard & Announcements**: Trang chủ công khai cho khách, dashboard nâng cao cho thành viên.
+
+### ✨ Added — Phase 7 (Public Dashboard)
+
+- **🏠 Trang Chủ Công Khai** ([#75](https://github.com/minhtuancn/giapha-os/pull/75) — closes [#74](https://github.com/minhtuancn/giapha-os/issues/74))
+  - `components/PublicDashboard.tsx`: trang chủ public với stats, sự kiện sắp tới, thành viên mới, thông báo
+  - `app/page.tsx`: tự động chuyển sang PublicDashboard khi admin bật `public_dashboard_enabled`
+  - Tên người còn sống tự động được che (`maskName`) trên trang công khai
+  - Thống kê: tổng thành viên, thế hệ, chi nhánh, còn sống, đã mất
+  - Nút đăng nhập nổi bật, footer link mã nguồn mở
+
+- **📢 Hệ Thống Thông Báo Công Khai**
+  - Schema: bảng `announcements` (title, content, is_pinned, expires_at, created_by)
+  - RLS: anon READ thông báo còn hiệu lực, chỉ admin INSERT/UPDATE/DELETE
+  - `components/AnnouncementManager.tsx`: CRUD thông báo với ghim + ngày hết hạn
+  - `components/PublicDashboardSettings.tsx`: card cài đặt trong trang Admin Settings
+  - Server actions: `togglePublicDashboard`, `createAnnouncement`, `deleteAnnouncement`
+  - Thông báo được ghim hiển thị nổi bật với nền vàng
+
+- **📊 Dashboard Nâng Cao (Đã Đăng Nhập)**
+  - Quick stats row: tổng thành viên, còn sống, đã mất, số thế hệ
+  - Badge phê duyệt tài khoản cho admin (hiển thị số chờ duyệt, link trực tiếp)
+  - Recent members grid: 4 thành viên mới nhất với avatar/ký tự đầu
+
+---
+
 ## [1.2.0] — Chưa phát hành
 
 > **Phase 6 — Extended Profiles & Privacy**: Hồ sơ mở rộng, bảo mật thông tin, quản lý chi/nhánh, tùy chọn cá nhân.

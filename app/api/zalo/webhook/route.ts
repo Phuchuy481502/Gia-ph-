@@ -1,3 +1,6 @@
+// TODO: Add Zalo OA webhook signature verification (HMAC-SHA256) when Zalo
+// finalises their OA webhook security spec. Currently relies on app_id lookup
+// in the database as a secondary validation layer.
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { sendZaloGroupMessage } from "@/utils/bot/zalo";

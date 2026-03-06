@@ -53,6 +53,51 @@ interface NotificationSettingsRow {
   enabled: boolean;
   days_before: number[];
   email_recipients: string[];
+  thanh_minh_enabled: boolean;
+}
+
+interface GraveRow {
+  id: string;
+  person_id: string;
+  cemetery_name: string | null;
+  cemetery_address: string | null;
+  public_memorial: boolean;
+  persons: { full_name: string } | null;
+}
+
+/**
+ * Compute the solar date for Tết Thanh Minh (3/3 âm lịch) in a given lunar year.
+ */
+function getThanhMinhSolarDate(lunarYear: number): Date | null {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const LunarClass = Lunar as any;
+  try {
+    const l = LunarClass.fromYmd(lunarYear, 3, 3);
+    const s = l.getSolar();
+    return new Date(s.getYear(), s.getMonth() - 1, s.getDay());
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Returns how many days until Tết Thanh Minh from today.
+ * Returns null if not within the next 30 days.
+ */
+function daysUntilThanhMinh(today: Date): { daysUntil: number; date: Date } | null {
+  const todaySolar = Solar.fromYmd(today.getFullYear(), today.getMonth() + 1, today.getDate());
+  const lunarYear = todaySolar.getLunar().getYear();
+
+  for (const offset of [0, 1]) {
+    const thanhMinh = getThanhMinhSolarDate(lunarYear + offset);
+    if (!thanhMinh) continue;
+    const msPerDay = 86400000;
+    const diff = Math.round((thanhMinh.getTime() - today.getTime()) / msPerDay);
+    if (diff >= 0 && diff <= 30) {
+      return { daysUntil: diff, date: thanhMinh };
+    }
+  }
+  return null;
 }
 
 function nextSolarForLunar(
@@ -207,6 +252,65 @@ function buildEmailHtml(events: UpcomingEvent[]): string {
 </html>`;
 }
 
+function buildThanhMinhEmailHtml(
+  daysUntil: number,
+  thanhMinhDate: Date,
+  graves: GraveRow[],
+): string {
+  const dateStr = thanhMinhDate.toLocaleDateString("vi-VN", {
+    weekday: "long", day: "2-digit", month: "2-digit", year: "numeric",
+  });
+  const when = daysUntil === 0 ? "Hôm nay" : daysUntil === 1 ? "Ngày mai" : `${daysUntil} ngày nữa`;
+
+  const graveRows = graves.map((g) => {
+    const name = escapeHtml(g.persons?.full_name ?? "Không rõ tên");
+    const cemetery = escapeHtml(g.cemetery_name ?? "Chưa ghi nghĩa trang");
+    const address = g.cemetery_address ? `<br/><span style="color:#78716c;font-size:12px;">${escapeHtml(g.cemetery_address)}</span>` : "";
+    const memorialLink = g.public_memorial
+      ? `<br/><a href="/memorial/${g.person_id}" style="color:#d97706;font-size:12px;">🕯️ Trang tưởng nhớ</a>`
+      : "";
+    return `
+    <tr>
+      <td style="padding:10px 8px;border-bottom:1px solid #f5f5f4;font-size:20px;width:36px;">🪦</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #f5f5f4;">
+        <strong style="color:#1c1917;">${name}</strong><br/>
+        <span style="color:#78716c;font-size:13px;">${cemetery}</span>
+        ${address}${memorialLink}
+      </td>
+    </tr>`;
+  }).join("");
+
+  return `
+<!DOCTYPE html>
+<html lang="vi">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/></head>
+<body style="margin:0;padding:0;background:#fafaf9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="max-width:600px;margin:32px auto;background:#ffffff;border-radius:16px;border:1px solid #e7e5e4;overflow:hidden;">
+    <div style="background:#78350f;padding:24px 28px;">
+      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">🌸 Tết Thanh Minh sắp đến</h1>
+      <p style="margin:4px 0 0;color:#fde68a;font-size:13px;">${when} — ${dateStr} (3/3 âm lịch)</p>
+    </div>
+    <div style="padding:24px 28px;">
+      <p style="margin:0 0 16px;color:#44403c;font-size:14px;">
+        Đây là nhắc nhở thăm viếng và vệ sinh mộ phần trong dịp Tết Thanh Minh.
+        Gia đình có <strong>${graves.length}</strong> mộ phần cần thăm viếng:
+      </p>
+      <table style="width:100%;border-collapse:collapse;">
+        <tbody>${graveRows}</tbody>
+      </table>
+    </div>
+    <div style="padding:16px 28px;background:#fafaf9;border-top:1px solid #e7e5e4;">
+      <p style="margin:0;color:#a8a29e;font-size:12px;">
+        Email này được gửi tự động bởi Gia Phả OS.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+
+
 function toISODate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
@@ -343,10 +447,63 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       })),
     );
 
+    // ── Tết Thanh Minh reminder ─────────────────────────────────────────────
+    let thanhMinhSent = false;
+    if (settings.thanh_minh_enabled) {
+      const today = new Date();
+      const thanhMinhInfo = daysUntilThanhMinh(today);
+      // Send reminder 7 days before and on the day
+      if (thanhMinhInfo && (thanhMinhInfo.daysUntil === 7 || thanhMinhInfo.daysUntil === 0)) {
+        const { data: tmLog } = await supabase
+          .from("notification_log")
+          .select("id")
+          .eq("event_type", "thanh_minh")
+          .eq("scheduled_date", toISODate(thanhMinhInfo.date))
+          .limit(1);
+
+        if (!tmLog || tmLog.length === 0) {
+          const { data: graves } = await supabase
+            .from("grave_records")
+            .select("id, person_id, cemetery_name, cemetery_address, public_memorial, persons(full_name)")
+            .not("gps_lat", "is", null); // only graves with known location
+
+          if (graves && graves.length > 0) {
+            const tmHtml = buildThanhMinhEmailHtml(
+              thanhMinhInfo.daysUntil,
+              thanhMinhInfo.date,
+              graves as unknown as GraveRow[],
+            );
+            const tmResp = await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${resendApiKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                from: "Gia Phả OS <onboarding@resend.dev>",
+                to: email_recipients,
+                subject: `🌸 Tết Thanh Minh ${thanhMinhInfo.daysUntil === 0 ? "hôm nay" : `còn ${thanhMinhInfo.daysUntil} ngày`} — Nhớ thăm mộ phần`,
+                html: tmHtml,
+              }),
+            });
+            if (tmResp.ok) {
+              await supabase.from("notification_log").insert({
+                person_id: null,
+                event_type: "thanh_minh",
+                scheduled_date: toISODate(thanhMinhInfo.date),
+              });
+              thanhMinhSent = true;
+            }
+          }
+        }
+      }
+    }
+
     return NextResponse.json({
       message: "Notifications sent",
       count: newEvents.length,
       recipients: email_recipients.length,
+      thanh_minh_sent: thanhMinhSent,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

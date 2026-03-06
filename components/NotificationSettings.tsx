@@ -11,6 +11,7 @@ interface NotificationSettingsProps {
   initialEnabled: boolean;
   initialDaysBefore: number[];
   initialEmailRecipients: string[];
+  initialThanhMinhEnabled?: boolean;
 }
 
 const DAYS_OPTIONS = [1, 3, 7] as const;
@@ -19,6 +20,7 @@ export default function NotificationSettings({
   initialEnabled,
   initialDaysBefore,
   initialEmailRecipients,
+  initialThanhMinhEnabled = false,
 }: NotificationSettingsProps) {
   const [enabled, setEnabled] = useState(initialEnabled);
   const [daysBefore, setDaysBefore] = useState<number[]>(
@@ -27,6 +29,7 @@ export default function NotificationSettings({
   const [emailRecipients, setEmailRecipients] = useState<string[]>(
     initialEmailRecipients,
   );
+  const [thanhMinhEnabled, setThanhMinhEnabled] = useState(initialThanhMinhEnabled);
   const [newEmail, setNewEmail] = useState("");
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -60,7 +63,7 @@ export default function NotificationSettings({
     setError(null);
     setSuccess(null);
     try {
-      await saveNotificationSettings(enabled, daysBefore, emailRecipients);
+      await saveNotificationSettings(enabled, daysBefore, emailRecipients, thanhMinhEnabled);
       setSuccess("Đã lưu cài đặt thông báo.");
       setTimeout(() => setSuccess(null), 3000);
     } catch (e) {
@@ -68,7 +71,7 @@ export default function NotificationSettings({
     } finally {
       setSaving(false);
     }
-  }, [enabled, daysBefore, emailRecipients]);
+  }, [enabled, daysBefore, emailRecipients, thanhMinhEnabled]);
 
   const handleTestEmail = useCallback(async () => {
     if (emailRecipients.length === 0) {
@@ -205,6 +208,22 @@ export default function NotificationSettings({
                 Thêm
               </button>
             </div>
+          </div>
+
+          {/* Thanh Minh reminder */}
+          <div className="flex items-center justify-between p-4 rounded-xl border border-stone-200 bg-stone-50">
+            <div>
+              <p className="text-sm font-medium text-stone-700">🌸 Nhắc Tết Thanh Minh</p>
+              <p className="text-xs text-stone-400 mt-0.5">Gửi email nhắc thăm mộ 7 ngày trước và vào ngày 3/3 âm lịch</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setThanhMinhEnabled((v) => !v)}
+              aria-pressed={thanhMinhEnabled}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${thanhMinhEnabled ? "bg-amber-500" : "bg-stone-300"}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${thanhMinhEnabled ? "translate-x-6" : "translate-x-1"}`} />
+            </button>
           </div>
 
           {/* Actions */}

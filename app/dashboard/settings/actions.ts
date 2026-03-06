@@ -134,6 +134,7 @@ export interface NotificationSettingsData {
   enabled: boolean;
   days_before: number[];
   email_recipients: string[];
+  thanh_minh_enabled: boolean;
 }
 
 export async function getNotificationSettings(): Promise<NotificationSettingsData> {
@@ -149,7 +150,7 @@ export async function getNotificationSettings(): Promise<NotificationSettingsDat
     .single();
 
   if (!data) {
-    return { id: null, enabled: false, days_before: [7], email_recipients: [] };
+    return { id: null, enabled: false, days_before: [7], email_recipients: [], thanh_minh_enabled: false };
   }
 
   return {
@@ -157,6 +158,7 @@ export async function getNotificationSettings(): Promise<NotificationSettingsDat
     enabled: data.enabled as boolean,
     days_before: (data.days_before as number[]) ?? [7],
     email_recipients: (data.email_recipients as string[]) ?? [],
+    thanh_minh_enabled: (data.thanh_minh_enabled as boolean) ?? false,
   };
 }
 
@@ -170,6 +172,7 @@ export async function saveNotificationSettings(
   enabled: boolean,
   daysBefore: number[],
   emailRecipients: string[],
+  thanhMinhEnabled: boolean = false,
 ): Promise<void> {
   const isAdmin = await getIsAdmin();
   if (!isAdmin) throw new Error("Unauthorized");
@@ -194,6 +197,7 @@ export async function saveNotificationSettings(
         enabled,
         days_before: daysBefore,
         email_recipients: emailRecipients,
+        thanh_minh_enabled: thanhMinhEnabled,
         updated_at: new Date().toISOString(),
       })
       .eq("id", existing.id);
@@ -203,6 +207,7 @@ export async function saveNotificationSettings(
       enabled,
       days_before: daysBefore,
       email_recipients: emailRecipients,
+      thanh_minh_enabled: thanhMinhEnabled,
       updated_at: new Date().toISOString(),
     });
     if (error) throw new Error(error.message);

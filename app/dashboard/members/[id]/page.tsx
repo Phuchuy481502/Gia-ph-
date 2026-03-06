@@ -41,6 +41,28 @@ export default async function MemberDetailPage({ params }: PageProps) {
     privateData = data;
   }
 
+  // Fetch grave record (for deceased persons)
+  const isDeceased = !!person.death_year || !!person.death_month || !!person.death_day || person.is_deceased;
+  let graveRecord = null;
+  if (isDeceased) {
+    const { data } = await supabase
+      .from("grave_records")
+      .select("*")
+      .eq("person_id", id)
+      .maybeSingle();
+    graveRecord = data;
+  }
+
+  // Fetch persons list for caretaker/branch_head selects (editor+ only)
+  let persons: Array<{ id: string; full_name: string }> = [];
+  if (canEdit) {
+    const { data } = await supabase
+      .from("persons")
+      .select("id, full_name")
+      .order("full_name");
+    persons = data ?? [];
+  }
+
   return (
     <div className="flex-1 w-full relative flex flex-col pb-8">
       {/* Decorative background blurs */}
@@ -78,6 +100,8 @@ export default async function MemberDetailPage({ params }: PageProps) {
             privateData={privateData}
             isAdmin={isAdmin}
             canEdit={canEdit}
+            graveRecord={graveRecord}
+            persons={persons}
           />
         </div>
       </main>

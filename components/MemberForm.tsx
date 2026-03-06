@@ -2,7 +2,7 @@
 
 import { logAudit } from "@/utils/auditLog";
 import RichNoteEditor from "@/components/RichNoteEditor";
-import { Gender, Person, Religion } from "@/types";
+import { Gender, Person, PrivacyLevel, Religion } from "@/types";
 import { createClient } from "@/utils/supabase/client";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import {
@@ -12,6 +12,7 @@ import {
   Briefcase,
   Cross,
   ExternalLink,
+  Eye,
   Image as ImageIcon,
   Loader2,
   Lock,
@@ -101,6 +102,9 @@ export default function MemberForm({
   const [religiousTitle, setReligiousTitle] = useState(initialData?.religious_title || "");
   const [civilTitle, setCivilTitle] = useState(initialData?.civil_title || "");
   const [careerDescription, setCareerDescription] = useState(initialData?.career_description || "");
+  const [privacyLevel, setPrivacyLevel] = useState<PrivacyLevel>(
+    initialData?.privacy_level ?? (initialData?.is_deceased ? "public" : "masked")
+  );
 
   // Private fields
   const [phoneNumber, setPhoneNumber] = useState(
@@ -251,6 +255,7 @@ export default function MemberForm({
         religious_title: religiousTitle || null,
         civil_title: civilTitle || null,
         career_description: careerDescription || null,
+        privacy_level: isDeceased ? "public" : privacyLevel,
       };
 
       let personId = initialData?.id;
@@ -928,6 +933,30 @@ export default function MemberForm({
                 placeholder="Địa chỉ cư trú..."
                 className={inputClasses}
               />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="flex items-center gap-1.5 text-sm font-semibold text-amber-900/80 mb-1.5">
+                <Eye className="size-4" /> Chế độ hiển thị công khai
+              </label>
+              <div className="relative">
+                <select
+                  value={isDeceased ? "public" : privacyLevel}
+                  onChange={(e) => setPrivacyLevel(e.target.value as PrivacyLevel)}
+                  disabled={isDeceased}
+                  className={`${inputClasses} appearance-none disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed`}
+                >
+                  <option value="public">Công khai — Hiển thị đầy đủ tên</option>
+                  <option value="masked">Ẩn một phần — Che phần cuối tên (mặc định)</option>
+                  <option value="private">Riêng tư — Ẩn hoàn toàn với khách</option>
+                </select>
+              </div>
+              {isDeceased && (
+                <p className="text-[11px] font-medium text-amber-700 mt-1.5 flex items-center gap-1">
+                  <AlertCircle className="size-3" />
+                  Người đã mất luôn hiển thị công khai
+                </p>
+              )}
             </div>
           </div>
         </motion.div>

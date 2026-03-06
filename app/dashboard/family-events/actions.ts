@@ -4,6 +4,8 @@ import { getIsAdmin, getSupabase, getUser } from "@/utils/supabase/queries";
 import { FamilyEventType } from "@/types";
 import { revalidatePath } from "next/cache";
 import { logActivity } from "@/utils/activityLogger";
+import { notifyTelegram } from "@/utils/notifyTelegram";
+import { notifyZalo } from "@/utils/notifyZalo";
 
 export async function createFamilyEvent(data: {
   title: string;
@@ -42,6 +44,19 @@ export async function createFamilyEvent(data: {
     related_type: "family_event",
     is_public: data.is_public,
   });
+
+  const msg =
+    `📅 <b>Sự kiện họ tộc mới</b>\n` +
+    `<b>${data.title}</b>\n` +
+    `🗓 Ngày: ${data.event_date}` +
+    (data.location ? `\n📍 Địa điểm: ${data.location}` : "") +
+    (data.description ? `\n📝 ${data.description}` : "");
+
+  await notifyTelegram(msg);
+  await notifyZalo(
+    `📅 Sự kiện họ tộc mới: ${data.title} — Ngày: ${data.event_date}` +
+      (data.location ? ` | ${data.location}` : ""),
+  );
 
   revalidatePath("/dashboard/family-events");
   revalidatePath("/dashboard/timeline");

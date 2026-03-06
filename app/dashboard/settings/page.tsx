@@ -1,10 +1,12 @@
 import NotificationSettings from "@/components/NotificationSettings";
 import PublicDashboardSettings from "@/components/PublicDashboardSettings";
+import TelegramSettings from "@/components/TelegramSettings";
 import { getProfile, getSupabase } from "@/utils/supabase/queries";
 import { GitBranch, Link2, Settings } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getNotificationSettings } from "./actions";
+import { getTelegramZaloSettings } from "./telegram/actions";
 import ApiKeySettings from "./ApiKeySettings";
 import PublicShareSettings from "./PublicShareSettings";
 
@@ -41,6 +43,12 @@ export default async function SettingsPage() {
     thanh_minh_enabled: false,
   }));
 
+  const telegramZaloSettings = await getTelegramZaloSettings().catch(() => ({
+    telegram: { enabled: false, botToken: "", chatId: "", phone: "" },
+    zalo: { enabled: false, webhookUrl: "" },
+    triggers: { onMemberAdded: true, onFamilyEvent: true, onBirthday: true },
+  }));
+
   return (
     <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       <div className="flex items-center gap-3">
@@ -75,6 +83,12 @@ export default async function SettingsPage() {
         initialDaysBefore={notificationSettings.days_before}
         initialEmailRecipients={notificationSettings.email_recipients}
         initialThanhMinhEnabled={notificationSettings.thanh_minh_enabled ?? false}
+      />
+
+      <TelegramSettings
+        initialTelegram={telegramZaloSettings.telegram}
+        initialZalo={telegramZaloSettings.zalo}
+        initialTriggers={telegramZaloSettings.triggers}
       />
 
       {/* Branch / Chi Management quick link */}

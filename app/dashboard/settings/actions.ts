@@ -254,3 +254,69 @@ export async function sendTestNotificationEmail(
     throw new Error(`Resend API error: ${response.status} ${body}`);
   }
 }
+
+// ── Public Dashboard ────────────────────────────────────────────────────────
+
+export async function togglePublicDashboard(enabled: boolean) {
+  const isAdmin = await getIsAdmin();
+  if (!isAdmin) throw new Error("Unauthorized");
+
+  const user = await getUser();
+  const supabase = await getSupabase();
+
+  const { error } = await supabase.from("family_settings").upsert(
+    {
+      setting_key: "public_dashboard_enabled",
+      setting_value: enabled ? "true" : "false",
+      updated_by: user?.id,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "setting_key" },
+  );
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/");
+}
+
+// ── Announcements ───────────────────────────────────────────────────────────
+
+export async function createAnnouncement(data: {
+  title: string;
+  content: string;
+  is_pinned: boolean;
+  expires_at: string | null;
+}) {
+  const isAdmin = await getIsAdmin();
+  if (!isAdmin) throw new Error("Unauthorized");
+
+  const user = await getUser();
+  const supabase = await getSupabase();
+
+  const { error } = await supabase.from("announcements").insert({
+    title: data.title,
+    content: data.content || null,
+    is_pinned: data.is_pinned,
+    expires_at: data.expires_at,
+    created_by: user?.id,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/");
+}
+
+export async function deleteAnnouncement(id: string) {
+  const isAdmin = await getIsAdmin();
+  if (!isAdmin) throw new Error("Unauthorized");
+
+  const supabase = await getSupabase();
+  const { error } = await supabase
+    .from("announcements")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/");
+}

@@ -1,6 +1,6 @@
 # 🗺️ Roadmap — Kế Hoạch Phát Triển Tương Lai
 
-> Trạng thái: **v1.2 In Progress** — Phase 6 (Extended Profiles & Privacy) đang triển khai.
+> Trạng thái: **v1.3 In Progress** — Phase 7 (Public Dashboard) hoàn thành, còn #61–#66 đang triển khai.
 
 ---
 
@@ -27,7 +27,7 @@
 | 🔔 Tết Thanh Minh Reminders | #54 | #49 |
 | 📸 Grave Photos & 360° Panorama Viewer | #55 | #47 |
 
-### v1.2 (Phase 6 — Extended Profiles & Privacy) — Đang triển khai
+### v1.2 (Phase 6 — Extended Profiles & Privacy) ✅ Hoàn Thành
 
 | Tính năng | PR | Issue |
 |-----------|-----|-------|
@@ -36,9 +36,18 @@
 | ✅ 🔒 Privacy Controls (name masking, privacy_level) | #70 | #58 |
 | ✅ 🌿 Branch/Chi Management | #71 | #60 |
 | ✅ ⚙️ User View Preferences (default root, branch, generation) | #72 | #67 |
+
+### v1.3 (Phase 7 — Public Dashboard) — Đang triển khai
+
+| Tính năng | PR | Issue |
+|-----------|-----|-------|
+| ✅ 🏠 Public Homepage Dashboard + Announcements | #75 | #74 |
 | 🔄 🛡️ Admin Approval Workflow | — | #65 |
 | 🔄 🔑 Invitation + Onboarding + Verification | — | #64 |
 | 🔄 🆔 CCCD Unique ID | — | #66 |
+| 🔄 📅 Family Events & Photos | — | #61 |
+| 🔄 📋 Activity Auto-Timeline | — | #62 |
+| 🔄 💬 Telegram & Zalo Notifications | — | #63 |
 
 ---
 

@@ -1013,3 +1013,40 @@ DROP POLICY IF EXISTS "Editors manage invitations" ON public.invitations;
 CREATE POLICY "Editors manage invitations" ON public.invitations FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin','editor')))
   WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin','editor')));
+
+-- ============================================================
+-- Phase 7: Public Dashboard + Announcements
+-- ============================================================
+
+-- Announcements table
+CREATE TABLE IF NOT EXISTS public.announcements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  content TEXT,
+  is_pinned BOOLEAN DEFAULT false,
+  expires_at TIMESTAMPTZ,
+  created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
+
+-- Everyone (including anon) can read non-expired announcements
+DROP POLICY IF EXISTS "Anyone read active announcements" ON public.announcements;
+CREATE POLICY "Anyone read active announcements" ON public.announcements
+  FOR SELECT USING (expires_at IS NULL OR expires_at > now());
+
+-- Only admins can manage announcements
+DROP POLICY IF EXISTS "Admins manage announcements" ON public.announcements;
+CREATE POLICY "Admins manage announcements" ON public.announcements
+  FOR ALL TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- Index for fast access
+CREATE INDEX IF NOT EXISTS idx_announcements_created ON public.announcements(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_announcements_pinned ON public.announcements(is_pinned, created_at DESC);
+
+-- Note: Add 'public_dashboard_enabled' key to family_settings via app settings UI
+-- INSERT INTO family_settings (setting_key, setting_value) VALUES ('public_dashboard_enabled', 'false') ON CONFLICT (setting_key) DO NOTHING;

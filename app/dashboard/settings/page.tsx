@@ -1,4 +1,5 @@
 import NotificationSettings from "@/components/NotificationSettings";
+import PublicDashboardSettings from "@/components/PublicDashboardSettings";
 import { getProfile, getSupabase } from "@/utils/supabase/queries";
 import { GitBranch, Settings } from "lucide-react";
 import Link from "next/link";
@@ -26,6 +27,12 @@ export default async function SettingsPage() {
     ]),
   );
 
+  const { data: announcements } = await supabase
+    .from("announcements")
+    .select("*")
+    .order("is_pinned", { ascending: false })
+    .order("created_at", { ascending: false });
+
   const notificationSettings = await getNotificationSettings().catch(() => ({
     id: null,
     enabled: false,
@@ -51,6 +58,11 @@ export default async function SettingsPage() {
       <PublicShareSettings
         initialEnabled={settingsMap.public_share_enabled === "true"}
         initialToken={settingsMap.public_share_token ?? null}
+      />
+
+      <PublicDashboardSettings
+        initialEnabled={settingsMap.public_dashboard_enabled === "true"}
+        initialAnnouncements={announcements ?? []}
       />
 
       <ApiKeySettings

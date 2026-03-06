@@ -605,8 +605,12 @@ CREATE TABLE IF NOT EXISTS public.notification_settings (
   enabled BOOLEAN NOT NULL DEFAULT false,
   days_before INT[] NOT NULL DEFAULT '{7}',
   email_recipients TEXT[] NOT NULL DEFAULT '{}',
+  thanh_minh_enabled BOOLEAN NOT NULL DEFAULT false,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add column idempotently for existing installations
+ALTER TABLE public.notification_settings ADD COLUMN IF NOT EXISTS thanh_minh_enabled BOOLEAN NOT NULL DEFAULT false;
 
 ALTER TABLE public.notification_settings ENABLE ROW LEVEL SECURITY;
 

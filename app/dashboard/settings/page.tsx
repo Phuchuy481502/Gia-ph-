@@ -30,6 +30,7 @@ export default async function SettingsPage() {
     enabled: false,
     days_before: [7],
     email_recipients: [] as string[],
+    thanh_minh_enabled: false,
   }));
 
   return (
@@ -60,6 +61,7 @@ export default async function SettingsPage() {
         initialEnabled={notificationSettings.enabled}
         initialDaysBefore={notificationSettings.days_before}
         initialEmailRecipients={notificationSettings.email_recipients}
+        initialThanhMinhEnabled={notificationSettings.thanh_minh_enabled ?? false}
       />
     </main>
   );

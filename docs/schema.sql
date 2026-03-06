@@ -588,11 +588,11 @@ ALTER TABLE person_photos ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Authenticated users can view photos" ON person_photos FOR SELECT TO authenticated USING (true);
 
 CREATE POLICY "Editors and admins can insert photos" ON person_photos FOR INSERT TO authenticated WITH CHECK (
-  EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'editor'))
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'editor'))
 );
 
 CREATE POLICY "Editors and admins can delete photos" ON person_photos FOR DELETE USING (
-  EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'editor'))
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'editor'))
 );
 
 -- ==========================================

@@ -6,7 +6,9 @@ import { createClient } from "@/utils/supabase/client";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import {
   AlertCircle,
+  AlertTriangle,
   Briefcase,
+  ExternalLink,
   Image as ImageIcon,
   Loader2,
   Lock,
@@ -17,7 +19,7 @@ import {
   User,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface MemberFormProps {
   initialData?: Person;
@@ -95,6 +97,53 @@ export default function MemberForm({
   const [currentResidence, setCurrentResidence] = useState(
     initialData?.current_residence || "",
   );
+
+  // Duplicate detection state
+  type DuplicateResult = { id: string; full_name: string; birth_year: number | null; gender: string };
+  const [duplicates, setDuplicates] = useState<DuplicateResult[]>([]);
+  const [checkingDuplicates, setCheckingDuplicates] = useState(false);
+  const duplicateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const checkDuplicates = useCallback(async (name: string, year: number | "") => {
+    if (name.trim().length < 2) {
+      setDuplicates([]);
+      return;
+    }
+    if (duplicateTimerRef.current) clearTimeout(duplicateTimerRef.current);
+    duplicateTimerRef.current = setTimeout(async () => {
+      setCheckingDuplicates(true);
+      try {
+        const client = createClient();
+        let query = client
+          .from("persons")
+          .select("id, full_name, birth_year, gender")
+          .ilike("full_name", `%${name.trim()}%`)
+          .limit(5);
+
+        if (year !== "") {
+          query = query.or(
+            `birth_year.is.null,and(birth_year.gte.${Number(year) - 2},birth_year.lte.${Number(year) + 2})`
+          );
+        }
+
+        if (initialData?.id) {
+          query = query.neq("id", initialData.id);
+        }
+
+        const { data } = await query;
+        setDuplicates(data ?? []);
+      } finally {
+        setCheckingDuplicates(false);
+      }
+    }, 500);
+  }, [initialData?.id]);
+
+  // Cleanup timer on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (duplicateTimerRef.current) clearTimeout(duplicateTimerRef.current);
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -282,9 +331,44 @@ export default function MemberForm({
               required
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
+              onBlur={(e) => checkDuplicates(e.target.value, birthYear)}
               className={inputClasses}
               placeholder="Nhập họ và tên..."
             />
+            {checkingDuplicates && (
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs text-stone-400">
+                <Loader2 className="size-3 animate-spin" />
+                Đang kiểm tra trùng lặp...
+              </p>
+            )}
+            {!checkingDuplicates && duplicates.length > 0 && (
+              <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
+                <p className="flex items-center gap-1.5 font-semibold text-amber-800 mb-2">
+                  <AlertTriangle className="size-4 shrink-0" />
+                  Có thể trùng lặp: tìm thấy {duplicates.length} thành viên tương tự:
+                </p>
+                <ul className="space-y-1.5">
+                  {duplicates.map((d) => (
+                    <li key={d.id} className="flex items-center gap-2 text-amber-900">
+                      <User className="size-3.5 shrink-0 text-amber-600" />
+                      <span className="flex-1 truncate">
+                        {d.full_name}
+                        {d.birth_year ? ` (${d.birth_year})` : ""}
+                      </span>
+                      <a
+                        href={`/dashboard/members/${d.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 text-amber-600 hover:text-amber-800"
+                        title="Xem chi tiết"
+                      >
+                        <ExternalLink className="size-3.5" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           <div className="md:col-span-1">
@@ -526,6 +610,7 @@ export default function MemberForm({
                 onChange={(e) =>
                   setBirthYear(e.target.value ? Number(e.target.value) : "")
                 }
+                onBlur={(e) => checkDuplicates(fullName, e.target.value ? Number(e.target.value) : "")}
                 className={inputClasses}
               />
             </div>

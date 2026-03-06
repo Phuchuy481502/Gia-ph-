@@ -6,6 +6,54 @@ Format theo [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.0] — 2026
+
+> **Phase 11 — i18n + AI Bot Module**: Chuẩn hoá đa ngôn ngữ, bot Telegram/Zalo AI per-nhánh, nhắc nhở tự động, quản lý subscription.
+
+### ✨ Added — Phase 11
+
+- **🌐 i18n Foundation** ([#87](https://github.com/minhtuancn/giapha-os/pull/87) — closes [#81](https://github.com/minhtuancn/giapha-os/issues/81))
+  - 12 namespaces: `nav`, `actions`, `common`, `auth`, `members`, `stats`, `events`, `settings`, `dashboard`, `graves`, `errors`, `privacy`
+  - 211 translation keys, 3 locales: 🇻🇳 Tiếng Việt / 🇬🇧 English / 🇨🇳 中文
+  - Foundation cho progressive component migration
+
+- **🤖 Per-branch Telegram Bot Setup** ([#88](https://github.com/minhtuancn/giapha-os/pull/88) — closes [#82](https://github.com/minhtuancn/giapha-os/issues/82))
+  - Bảng `branch_bots` — mỗi nhánh cấu hình bot riêng
+  - Tự động đăng ký webhook với Telegram API (`setWebhook`)
+  - Webhook handler: lệnh `/start` `/help` `/lichgio` `/sukien` `/giapha [tên]`
+  - Admin UI tại `/dashboard/settings/branches/[id]/bot` với hướng dẫn chi tiết
+
+- **🧠 AI Chat Integration** ([#89](https://github.com/minhtuancn/giapha-os/pull/89) — closes [#83](https://github.com/minhtuancn/giapha-os/issues/83))
+  - OpenAI-compatible interface: OpenAI / Anthropic / OpenRouter / LiteLLM / Custom
+  - BYOK (Bring Your Own Key) — API key mã hoá tại cấp nhánh
+  - Platform key — super admin cấu hình key dùng chung
+  - Branch context system prompt với thông tin dòng họ realtime
+  - Lịch sử hội thoại (10 lượt gần nhất) trong `bot_conversations`
+  - Super admin panel `/admin` — quản lý platform AI key
+
+- **⏰ Scheduled Reminders** ([#90](https://github.com/minhtuancn/giapha-os/pull/90) — closes [#84](https://github.com/minhtuancn/giapha-os/issues/84))
+  - Cron job `/api/cron/reminders` (7:00 AM Vietnam = 0:00 UTC)
+  - Lịch giỗ: nhắc 3 lần (7 ngày / 3 ngày / 1 ngày trước) + thông báo ngày giỗ
+  - Sự kiện họ tộc: 3 ngày trước + ngày sự kiện
+  - Sinh nhật: thông báo ngày sinh nhật người còn sống
+  - Idempotent via `reminder_logs` unique constraint
+  - `vercel.json` cron config + `CRON_SECRET` bảo mật
+
+- **🔑 Subscription & Rate Limiting** ([#91](https://github.com/minhtuancn/giapha-os/pull/91) — closes [#85](https://github.com/minhtuancn/giapha-os/issues/85))
+  - Bảng `subscriptions` — Free/Basic/Pro/Enterprise plans
+  - `checkRateLimit()` — BYOK bypass, platform key theo quota tháng
+  - `/admin/subscriptions` — quản lý plan, progress bar usage, reset quota
+  - Tự động thông báo bot khi hết quota
+
+- **🌐 Zalo OA & Multi-platform Architecture** ([#91](https://github.com/minhtuancn/giapha-os/pull/91) — closes [#86](https://github.com/minhtuancn/giapha-os/issues/86))
+  - `BotPlatform` interface + `createPlatform()` factory (Telegram/Zalo)
+  - `/api/zalo/webhook` — xử lý events Zalo OA, lệnh, AI chat
+  - `ZaloBotSettings` component — cấu hình Zalo OA
+  - `refreshZaloToken` — tự động refresh Zalo access token
+  - Dễ mở rộng thêm platform mới (implement interface là xong)
+
+---
+
 ## [1.4.0] — 2025
 
 > **Phase 8–10 — Authentication, Invitations & Notifications**: Phê duyệt tài khoản, CCCD, mời tham gia, thông báo Telegram/Zalo, sự kiện họ tộc, timeline hoạt động.

@@ -1,5 +1,6 @@
 "use server";
 
+import { logAudit } from "@/utils/auditLog";
 import { getProfile, getSupabase } from "@/utils/supabase/queries";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -33,7 +34,14 @@ export async function deleteMemberProfile(memberId: string) {
     };
   }
 
-  // 3. Delete the member
+  // 3. Fetch person name before deleting for the audit log
+  const { data: person } = await supabase
+    .from("persons")
+    .select("full_name")
+    .eq("id", memberId)
+    .single();
+
+  // 4. Delete the member
   const { error: deleteError } = await supabase
     .from("persons")
     .delete()
@@ -44,7 +52,14 @@ export async function deleteMemberProfile(memberId: string) {
     return { error: "Đã xảy ra lỗi khi xoá hồ sơ." };
   }
 
-  // 4. Revalidate and redirect
+  // 5. Log the deletion
+  await logAudit({
+    personId: memberId,
+    personName: person?.full_name ?? undefined,
+    action: "delete",
+  });
+
+  // 6. Revalidate and redirect
   revalidatePath("/dashboard/members");
   redirect("/dashboard/members");
 }

@@ -456,3 +456,39 @@ BEGIN
     WHERE id = target_user_id;
 END;
 $$;
+
+-- ==========================================
+-- AUDIT LOG (Edit History / Lịch sử chỉnh sửa)
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS public.audit_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  person_id UUID REFERENCES public.persons(id) ON DELETE SET NULL,
+  person_name TEXT,
+  action TEXT NOT NULL, -- 'create', 'update', 'delete'
+  field_changed TEXT,
+  old_value TEXT,
+  new_value TEXT,
+  changed_by UUID REFERENCES auth.users(id),
+  changed_by_email TEXT,
+  changed_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_log_changed_at ON public.audit_log(changed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_person_id ON public.audit_log(person_id);
+
+-- RLS: Only authenticated users can insert; only admins can read
+ALTER TABLE public.audit_log ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can insert audit logs"
+  ON public.audit_log FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = changed_by);
+
+CREATE POLICY "Admins can read audit logs"
+  ON public.audit_log FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );

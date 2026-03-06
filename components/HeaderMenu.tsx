@@ -1,14 +1,14 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, Info, Network, UserCircle } from "lucide-react";
+import { ChevronDown, History, Info, Network, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import LogoutButton from "./LogoutButton";
 import { useUser } from "./UserProvider";
 
 export default function HeaderMenu() {
-  const { user } = useUser();
+  const { user, isAdmin } = useUser();
   const userEmail = user?.email;
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -69,6 +69,17 @@ export default function HeaderMenu() {
                 <Network className="size-4" />
                 Bảng điều khiển
               </Link>
+
+              {isAdmin && (
+                <Link
+                  href="/dashboard/history"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-violet-700 hover:bg-violet-50 transition-colors"
+                >
+                  <History className="size-4" />
+                  Lịch sử
+                </Link>
+              )}
 
               <Link
                 href="/about"

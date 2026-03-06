@@ -1,5 +1,6 @@
 "use client";
 
+import { logAudit } from "@/utils/auditLog";
 import { Gender, Person } from "@/types";
 import { createClient } from "@/utils/supabase/client";
 import { AnimatePresence, motion, Variants } from "framer-motion";
@@ -191,6 +192,14 @@ export default function MemberForm({
           .update(personData)
           .eq("id", personId);
         if (updateError) throw updateError;
+        await logAudit({
+          personId,
+          personName: fullName,
+          action: "update",
+          fieldChanged: "profile",
+          oldValue: initialData?.full_name,
+          newValue: fullName,
+        });
       } else {
         const { data: newPerson, error: createError } = await supabase
           .from("persons")
@@ -199,6 +208,11 @@ export default function MemberForm({
           .single();
         if (createError) throw createError;
         personId = newPerson.id;
+        await logAudit({
+          personId,
+          personName: fullName,
+          action: "create",
+        });
       }
 
       // 2. Upsert private data (only if admin and personId exists)

@@ -3,6 +3,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendTelegramMessage } from "@/utils/bot/telegram";
 import type { TelegramMessage } from "@/utils/bot/telegram";
+import { checkRateLimit } from "@/utils/bot/rateLimiter";
 
 interface AIMessage {
   role: "system" | "user" | "assistant";
@@ -183,6 +184,13 @@ export async function handleAIChat(
       apiKey = platformConfig.apiKey;
       model = platformConfig.model;
       baseUrl = platformConfig.baseUrl;
+    }
+
+    const isByok = !!bot.ai_api_key;
+    const { allowed, reason } = await checkRateLimit(isByok);
+    if (!allowed) {
+      await sendTelegramMessage(bot.bot_token, chatId, `⚠️ ${reason}`);
+      return;
     }
 
     const { data: history } = await supabase

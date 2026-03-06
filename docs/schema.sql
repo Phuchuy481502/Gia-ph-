@@ -1155,3 +1155,36 @@ ALTER TABLE public.branch_bots ADD COLUMN IF NOT EXISTS ai_enabled BOOLEAN DEFAU
 --     Authorization: Bearer <CRON_SECRET>
 --   Set this in your Vercel environment variables (or .env.local for dev).
 --   If unset, the endpoint is accessible without authentication (dev-only behaviour).
+
+-- ============================================================
+-- Phase 9: Subscription & Rate Limiting
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  plan TEXT NOT NULL DEFAULT 'free', -- 'free' | 'basic' | 'pro' | 'enterprise'
+  ai_requests_limit INT NOT NULL DEFAULT 0,
+  ai_requests_used INT NOT NULL DEFAULT 0,
+  reset_at TIMESTAMPTZ DEFAULT (date_trunc('month', now()) + interval '1 month'),
+  expires_at TIMESTAMPTZ,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Only one active subscription at a time for single-family instance
+CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_active ON public.subscriptions(is_active) WHERE is_active = true;
+
+ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Admins manage subscriptions" ON public.subscriptions;
+CREATE POLICY "Admins manage subscriptions" ON public.subscriptions
+  FOR ALL TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- ============================================================
+-- Phase 10: Zalo OA Integration
+-- ============================================================
+
+ALTER TABLE public.branch_bots ADD COLUMN IF NOT EXISTS zalo_oa_id TEXT;
+ALTER TABLE public.branch_bots ADD COLUMN IF NOT EXISTS zalo_refresh_token TEXT;

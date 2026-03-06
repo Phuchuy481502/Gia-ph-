@@ -16,10 +16,9 @@ const ADMIN_LINKS = [
     href: "/admin/subscriptions",
     icon: CreditCard,
     title: "Subscription Management",
-    description: "Quản lý gói dịch vụ và thanh toán (sắp ra mắt)",
+    description: "Quản lý gói dịch vụ, quota AI và rate limiting",
     color: "text-blue-600",
     bg: "bg-blue-50",
-    disabled: true,
   },
   {
     href: "/admin/analytics",

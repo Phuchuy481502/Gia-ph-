@@ -1055,3 +1055,90 @@ CREATE INDEX IF NOT EXISTS idx_announcements_pinned ON public.announcements(is_p
 ALTER TABLE public.persons ADD COLUMN IF NOT EXISTS national_id TEXT;
 ALTER TABLE public.persons ADD COLUMN IF NOT EXISTS national_id_verified BOOLEAN DEFAULT false;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_persons_national_id ON public.persons(national_id) WHERE national_id IS NOT NULL;
+
+-- ============================================================
+-- Phase 9: AI Bot Module
+-- ============================================================
+
+-- Per-branch bot configuration
+CREATE TABLE IF NOT EXISTS public.branch_bots (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  branch_id UUID REFERENCES public.branches(id) ON DELETE CASCADE,
+  platform TEXT NOT NULL DEFAULT 'telegram', -- 'telegram' | 'zalo'
+  bot_token TEXT, -- stored as plain text (Supabase RLS protects it)
+  bot_username TEXT,
+  chat_id TEXT, -- the group chat ID bot is added to
+  webhook_registered BOOLEAN DEFAULT false,
+  is_active BOOLEAN DEFAULT true,
+  created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(branch_id, platform)
+);
+
+CREATE INDEX IF NOT EXISTS idx_branch_bots_branch ON public.branch_bots(branch_id);
+CREATE INDEX IF NOT EXISTS idx_branch_bots_platform ON public.branch_bots(platform);
+
+ALTER TABLE public.branch_bots ENABLE ROW LEVEL SECURITY;
+
+-- Only admins can manage branch bots
+DROP POLICY IF EXISTS "Admins manage branch bots" ON public.branch_bots;
+CREATE POLICY "Admins manage branch bots" ON public.branch_bots
+  FOR ALL TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- Service role for webhook processing (no RLS bypass needed — use service role in API route)
+
+-- Conversation history for AI chat
+CREATE TABLE IF NOT EXISTS public.bot_conversations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  branch_bot_id UUID NOT NULL REFERENCES public.branch_bots(id) ON DELETE CASCADE,
+  telegram_chat_id TEXT NOT NULL,
+  telegram_user_id TEXT,
+  telegram_username TEXT,
+  role TEXT NOT NULL CHECK (role IN ('user','assistant','system')),
+  content TEXT NOT NULL,
+  tokens_used INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_bot_conv_bot ON public.bot_conversations(branch_bot_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bot_conv_chat ON public.bot_conversations(telegram_chat_id, created_at DESC);
+
+ALTER TABLE public.bot_conversations ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins view conversations" ON public.bot_conversations;
+CREATE POLICY "Admins view conversations" ON public.bot_conversations
+  FOR SELECT TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- Reminder logs for idempotency
+CREATE TABLE IF NOT EXISTS public.reminder_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  branch_bot_id UUID REFERENCES public.branch_bots(id) ON DELETE CASCADE,
+  reminder_type TEXT NOT NULL, -- 'anniversary' | 'event' | 'birthday'
+  subject_id TEXT NOT NULL, -- person_id or event_id
+  days_before INT NOT NULL, -- 7, 3, 1, 0
+  scheduled_date DATE NOT NULL, -- the actual event date
+  platform TEXT NOT NULL DEFAULT 'telegram',
+  status TEXT NOT NULL DEFAULT 'sent', -- 'sent' | 'failed'
+  sent_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_reminder_logs_unique
+  ON public.reminder_logs(branch_bot_id, reminder_type, subject_id, days_before, scheduled_date);
+
+ALTER TABLE public.reminder_logs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Admins view reminder logs" ON public.reminder_logs;
+CREATE POLICY "Admins view reminder logs" ON public.reminder_logs
+  FOR SELECT TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- AI config on branch_bots (add columns)
+ALTER TABLE public.branch_bots ADD COLUMN IF NOT EXISTS ai_provider TEXT DEFAULT 'openai';
+ALTER TABLE public.branch_bots ADD COLUMN IF NOT EXISTS ai_model TEXT DEFAULT 'gpt-4o-mini';
+ALTER TABLE public.branch_bots ADD COLUMN IF NOT EXISTS ai_api_key TEXT; -- BYOK, stored as-is (admin's own key)
+ALTER TABLE public.branch_bots ADD COLUMN IF NOT EXISTS ai_base_url TEXT; -- custom endpoint
+ALTER TABLE public.branch_bots ADD COLUMN IF NOT EXISTS ai_system_prompt TEXT;
+ALTER TABLE public.branch_bots ADD COLUMN IF NOT EXISTS ai_enabled BOOLEAN DEFAULT false;

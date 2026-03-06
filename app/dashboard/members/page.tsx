@@ -2,6 +2,7 @@ import { DashboardProvider } from "@/components/DashboardContext";
 import DashboardViews from "@/components/DashboardViews";
 import MemberDetailModal from "@/components/MemberDetailModal";
 import ViewToggle from "@/components/ViewToggle";
+import { getUserPreferences } from "@/app/dashboard/preferences/actions";
 import { getProfile, getSupabase } from "@/utils/supabase/queries";
 
 interface PageProps {
@@ -13,18 +14,15 @@ export default async function FamilyTreePage({ searchParams }: PageProps) {
   const profile = await getProfile();
   const canEdit = profile?.role === "admin" || profile?.role === "editor";
 
-  // If view is list, we only need persons, not relationships.
-  // We fetch persons for all views to pass down as a prop if we want, or let components fetch.
-  // Actually, to make transitions fast and avoid duplicate fetching across components,
-  // we will fetch data here and pass it down as props.
   const supabase = await getSupabase();
 
-  const [personsRes, relsRes] = await Promise.all([
+  const [personsRes, relsRes, userPrefs] = await Promise.all([
     supabase
       .from("persons")
       .select("*")
       .order("birth_year", { ascending: true, nullsFirst: false }),
     supabase.from("relationships").select("*"),
+    getUserPreferences().catch(() => null),
   ]);
 
   const persons = personsRes.data || [];
@@ -42,15 +40,15 @@ export default async function FamilyTreePage({ searchParams }: PageProps) {
       .map((r) => r.person_b),
   );
 
-  let finalRootId = rootId;
+  // URL param > user preference > fallback
+  let finalRootId = rootId ?? userPrefs?.default_root_person_id ?? undefined;
 
-  // If no rootId is provided, fallback to the earliest created person
   if (!finalRootId || !personsMap.has(finalRootId)) {
     const rootsFallback = persons.filter((p) => !childIds.has(p.id));
     if (rootsFallback.length > 0) {
       finalRootId = rootsFallback[0].id;
     } else if (persons.length > 0) {
-      finalRootId = persons[0].id; // ultimate fallback
+      finalRootId = persons[0].id;
     }
   }
 

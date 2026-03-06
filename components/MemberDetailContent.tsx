@@ -589,6 +589,16 @@ export default function MemberDetailContent({
                         )}
                       </dd>
                     </div>
+                    {!person.is_deceased && (person as { national_id?: string | null }).national_id && (
+                      <div>
+                        <dt className="text-[11px] font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                          🪪 Số CCCD / CMND
+                        </dt>
+                        <dd className="text-stone-900 font-medium bg-white px-3 py-2 rounded-lg border border-stone-200/60 shadow-xs font-mono tracking-wider">
+                          {(person as { national_id?: string | null }).national_id}
+                        </dd>
+                      </div>
+                    )}
                   </dl>
                 </div>
               ) : (

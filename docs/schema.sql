@@ -1050,3 +1050,8 @@ CREATE INDEX IF NOT EXISTS idx_announcements_pinned ON public.announcements(is_p
 
 -- Note: Add 'public_dashboard_enabled' key to family_settings via app settings UI
 -- INSERT INTO family_settings (setting_key, setting_value) VALUES ('public_dashboard_enabled', 'false') ON CONFLICT (setting_key) DO NOTHING;
+
+-- Phase 7: CCCD Unique ID
+ALTER TABLE public.persons ADD COLUMN IF NOT EXISTS national_id TEXT;
+ALTER TABLE public.persons ADD COLUMN IF NOT EXISTS national_id_verified BOOLEAN DEFAULT false;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_persons_national_id ON public.persons(national_id) WHERE national_id IS NOT NULL;

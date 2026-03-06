@@ -1,7 +1,7 @@
 import Footer from "@/components/Footer";
 import { checkMigrationStatus } from "@/utils/checkMigrations";
 import { promises as fs } from "fs";
-import { ArrowLeft, CheckCircle2, Database, Play, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Database, ExternalLink, LogIn, Play, XCircle } from "lucide-react";
 import Link from "next/link";
 import path from "path";
 import CollapsibleSection from "./CollapsibleSection";
@@ -24,6 +24,13 @@ export default async function SetupPage() {
   const missingSql = missingMigrations.map((m) => `-- ${m.name}\n${m.sql}`).join("\n\n");
   const allInstalled = missingMigrations.length === 0;
 
+  // Build direct link to Supabase SQL Editor from env var
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const projectRef = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1];
+  const sqlEditorUrl = projectRef
+    ? `https://supabase.com/dashboard/project/${projectRef}/sql/new`
+    : "https://supabase.com/dashboard/project/_/sql/new";
+
   return (
     <div className="min-h-screen flex flex-col bg-[#fafaf9] select-none selection:bg-amber-200 selection:text-amber-900 relative overflow-hidden">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-size-[24px_24px] pointer-events-none"></div>
@@ -35,6 +42,35 @@ export default async function SetupPage() {
       <div className="flex-1 flex flex-col items-center px-4 py-12 relative z-10 w-full max-w-5xl mx-auto">
         {/* Header card */}
         <div className="w-full bg-white p-8 sm:p-10 rounded-3xl shadow-xl border border-stone-200 relative overflow-hidden mb-6">
+          {!allInstalled && (
+            <div className="flex items-start gap-3 px-5 py-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-sm mb-6">
+              <XCircle className="size-5 text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Chưa tạo bảng dữ liệu — bạn chưa thể đăng nhập</p>
+                <p className="mt-0.5 font-normal text-red-700">
+                  Hãy sao chép SQL bên dưới, chạy trong{" "}
+                  <a href={sqlEditorUrl} target="_blank" rel="noopener noreferrer" className="font-bold underline hover:text-red-900">
+                    Supabase SQL Editor
+                  </a>
+                  {" "}rồi tải lại trang này để kiểm tra.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {allInstalled && (
+            <div className="flex items-center justify-between gap-4 px-5 py-4 rounded-2xl bg-teal-50 border border-teal-200 text-teal-800 text-sm mb-6">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="size-5 text-teal-600 shrink-0" />
+                <p className="font-semibold">Database đã sẵn sàng! Bạn có thể đăng nhập.</p>
+              </div>
+              <Link href="/login" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm whitespace-nowrap transition-colors">
+                <LogIn className="size-4" />
+                Đăng nhập
+              </Link>
+            </div>
+          )}
+
           <div className="flex items-start gap-4 mb-6">
             <div className="p-4 bg-indigo-50 text-indigo-600 rounded-2xl shrink-0">
               <Database className="size-8" />
@@ -139,12 +175,12 @@ export default async function SetupPage() {
                 <li className="leading-relaxed">
                   Mở{" "}
                   <a
-                    href="https://supabase.com/dashboard/project/_/sql/new"
+                    href={sqlEditorUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-amber-600 font-semibold hover:underline"
+                    className="text-amber-600 font-semibold hover:underline inline-flex items-center gap-1"
                   >
-                    Supabase SQL Editor
+                    Supabase SQL Editor <ExternalLink className="size-3 inline" />
                   </a>{" "}
                   trong dự án của bạn.
                 </li>

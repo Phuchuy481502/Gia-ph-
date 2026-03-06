@@ -1,7 +1,7 @@
 import Footer from "@/components/Footer";
 import { checkMigrationStatus } from "@/utils/checkMigrations";
 import { promises as fs } from "fs";
-import { ArrowLeft, CheckCircle2, Database, ExternalLink, LogIn, Play, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Database, Download, ExternalLink, LogIn, Play, XCircle } from "lucide-react";
 import Link from "next/link";
 import path from "path";
 import CollapsibleSection from "./CollapsibleSection";
@@ -204,11 +204,21 @@ export default async function SetupPage() {
                   <code>{schemaContent}</code>
                 </pre>
               </div>
-              <div className="bg-[#2d2d2d] px-4 py-3 border-t border-stone-700 flex items-center justify-between">
+              <div className="bg-[#2d2d2d] px-4 py-3 border-t border-stone-700 flex items-center justify-between gap-3">
                 <span className="text-stone-400 text-xs font-mono">
-                  docs/schema.sql
+                  docs/schema.sql — {schemaContent.split("\n").length} dòng
                 </span>
-                <CopyButton content={schemaContent} />
+                <div className="flex items-center gap-2">
+                  <a
+                    href="/api/setup/schema.sql"
+                    download="giapha-os-schema.sql"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors"
+                  >
+                    <Download className="size-3.5" />
+                    Tải về .sql
+                  </a>
+                  <CopyButton content={schemaContent} />
+                </div>
               </div>
             </div>
           </CollapsibleSection>

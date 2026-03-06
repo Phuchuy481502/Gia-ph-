@@ -49,7 +49,8 @@ ALTER TABLE public.persons ENABLE ROW LEVEL SECURITY;`,
     sql: `-- Enum type (run first if not exists)
 DO $$ BEGIN
   CREATE TYPE public.relationship_type_enum AS ENUM (
-    'parent', 'spouse', 'step_parent', 'sibling', 'half_sibling', 'godparent'
+    'marriage', 'biological_child', 'adopted_child',
+    'step_parent', 'sibling', 'half_sibling', 'godparent'
   );
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 

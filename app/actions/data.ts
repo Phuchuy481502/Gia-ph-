@@ -53,9 +53,10 @@ interface BackupPayload {
 
 const VALID_GENDERS = new Set(["male", "female", "other"]);
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Must match public.relationship_type_enum in schema.sql
 const VALID_RELATIONSHIP_TYPES = new Set([
-  "parent_child", "spouse", "sibling", "adopted", "step_parent",
-  "parent", "child", "husband", "wife", "other",
+  "marriage", "biological_child", "adopted_child",
+  "step_parent", "sibling", "half_sibling", "godparent",
 ]);
 
 function isNullableInt(v: unknown): boolean {

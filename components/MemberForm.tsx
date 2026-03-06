@@ -108,6 +108,7 @@ export default function MemberForm({
     initialData?.privacy_level ?? (initialData?.is_deceased ? "public" : "masked")
   );
   const [branchId, setBranchId] = useState(initialData?.branch_id || "");
+  const [nationalId, setNationalId] = useState(initialData?.national_id || "");
 
   // Private fields
   const [phoneNumber, setPhoneNumber] = useState(
@@ -260,6 +261,7 @@ export default function MemberForm({
         career_description: careerDescription || null,
         privacy_level: isDeceased ? "public" : privacyLevel,
         branch_id: branchId || null,
+        ...(isAdmin && !isDeceased ? { national_id: nationalId || null } : {}),
       };
 
       let personId = initialData?.id;
@@ -982,6 +984,25 @@ export default function MemberForm({
                 </p>
               )}
             </div>
+
+            {!isDeceased && (
+              <div className="md:col-span-2">
+                <label className="flex items-center gap-1.5 text-sm font-semibold text-amber-900/80 mb-1.5">
+                  <span className="text-amber-700 font-bold text-xs">🪪</span> Số CCCD / CMND
+                </label>
+                <input
+                  type="text"
+                  value={nationalId}
+                  onChange={(e) => setNationalId(e.target.value.replace(/\D/g, "").slice(0, 12))}
+                  placeholder="Nhập số CCCD (9–12 chữ số)"
+                  maxLength={12}
+                  className={inputClasses}
+                />
+                <p className="text-[11px] text-stone-400 mt-1">
+                  Dùng làm mã định danh duy nhất. Không hiển thị công khai.
+                </p>
+              </div>
+            )}
           </div>
         </motion.div>
       )}

@@ -22,47 +22,37 @@
 | **Xác Thực & Phân Quyền** | Supabase Auth (email/password), 3 vai trò: Admin / Editor / Member; RLS policies |
 | **Âm Lịch** | Chuyển đổi dương↔âm lịch cho ngày sinh nhật, ngày giỗ |
 
-### Phase 1 — Hoàn Thiện Tính Năng (✅ Xong)
+### Phase 1–4 — Hoàn Thiện & Mở Rộng (✅ Xong) — v1.0
+
+Toàn bộ 22 issues Phase 1–4 đã merge. Xem Changelog.md.
+
+### Phase 5 — Quản Lý Mồ Mả (✅ Xong) — v1.1
+
+Issues #44–#49: Grave records, GPS map, photos, memorial page, reminders.
+
+### Phase 6 — Hồ Sơ Mở Rộng & Bảo Mật (✅ Xong) — v1.2
+
+Issues #57–#60: Thống kê nâng cao, hồ sơ cá nhân, bảo mật thông tin, quản lý chi/nhánh.
+
+### Phase 7 — Public Dashboard (✅ Xong) — v1.3
+
+Issue #74: Trang chủ công khai, thông báo ghim, dashboard nâng cao cho thành viên đăng nhập.
+
+### Phase 8–10 — Auth, Invitations & Notifications (✅ Xong) — v1.4
 
 | Issue | Tính Năng | PR |
 |-------|-----------|-----|
-| #1 | Hoàn thiện Quản lý Sự kiện (sửa/xoá, lịch sử, phân loại) | #23 |
-| #2 | Hoàn thiện Chi tiết Cá nhân Riêng tư (SĐT, nghề nghiệp, nơi ở) | #23 |
-| #3 | Xuất ảnh cây gia phả PNG/PDF | #23 |
-| #4 | Tìm kiếm & Lọc trong List View (tên, thế hệ, giới tính, trạng thái) | #23 |
-
-### Phase 2 — Tính Năng Mới Quan Trọng (✅ Xong)
-
-| Issue | Tính Năng | PR |
-|-------|-----------|-----|
-| #5 | 🔍 Global Search (Ctrl+K) — tìm theo tên, năm sinh, nơi sinh | #24 |
-| #6 | 📋 Audit Log — lịch sử chỉnh sửa, trang `/dashboard/history` | #25 |
-| #7 | ⚠️ Duplicate Detection — cảnh báo khi tạo/sửa trùng tên+năm sinh | #26 |
-| #8 | 🔗 Extended Relationship Types — 6 loại quan hệ mới | #27 |
-
-### Phase 3 — Trải Nghiệm Người Dùng (✅ Xong)
-
-| Issue | Tính Năng | PR |
-|-------|-----------|-----|
-| #10 | 📅 Family Timeline — dòng thời gian sự kiện gia đình | #28 |
-| #14 | 🗂️ Bulk Operations — chọn nhiều, xoá hàng loạt (Admin only) | #29 |
-| #16 | 🌙 Dark Mode — toggle sáng/tối, lưu preference | #30 |
-| #19 | 🖨️ Print Mode — layout tối ưu cho in ấn | #31 |
-| #12 | 📝 Rich Text Notes — markdown editor với toolbar | #32 |
-| #13 | 👁️ Public/Anonymous View — chia sẻ cây gia phả công khai | #33 |
-
-### Phase 4 — Platform Expansion (✅ Xong)
-
-| Issue | Tính Năng | PR |
-|-------|-----------|-----|
-| #15 | 📱 PWA — cài đặt như app, offline fallback | #34 |
-| #18 | 🔄 Auto DB Migration — migration status dashboard tại `/setup` | #35 |
-| #11 | 🖼️ Photo Gallery — nhiều ảnh/thành viên, lightbox, upload | #36 |
-| #21 | 🔌 Public REST API — API key management, 5 endpoints | #37 |
+| #65 | ✅ Admin Approval Workflow — duyệt/từ chối tài khoản, batch approve | #77 |
+| #66 | 🪪 CCCD / National ID — lưu số căn cước, unique index | #76 |
+| #61 | 📅 Family Events & Photos — CRUD sự kiện họ tộc, lọc theo chi | #78 |
+| #62 | 📰 Activity Auto-Timeline — feed hoạt động tự động | #78 |
+| #64 | 🔗 Invitation + Onboarding — link mời có nhánh/vai trò/hạn dùng | #79 |
+| #63 | 📱 Telegram & Zalo Notifications — bot token, webhook, test | #80 |
 
 ---
 
 ## 🚧 Đang Lên Kế Hoạch / Chưa Triển Khai
+
 
 ### Issue #9 — Email Notifications (Priority: MEDIUM 🟡)
 

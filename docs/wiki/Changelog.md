@@ -6,7 +6,47 @@ Format theo [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.3.0] — Chưa phát hành
+## [1.4.0] — 2025
+
+> **Phase 8–10 — Authentication, Invitations & Notifications**: Phê duyệt tài khoản, CCCD, mời tham gia, thông báo Telegram/Zalo, sự kiện họ tộc, timeline hoạt động.
+
+### ✨ Added — Phase 8-10
+
+- **✅ Phê Duyệt Tài Khoản** ([#77](https://github.com/minhtuancn/giapha-os/pull/77) — closes [#65](https://github.com/minhtuancn/giapha-os/issues/65))
+  - `components/PendingApprovalQueue.tsx`: danh sách chờ duyệt với chọn hàng loạt + duyệt/từ chối từng người
+  - Server actions: `approveUser`, `rejectUser`, `batchApproveUsers`
+  - Dashboard badge hiển thị số tài khoản chờ duyệt (link trực tiếp `/dashboard/users`)
+  - Tự động set `is_active=true` và `account_status='active'` khi duyệt
+
+- **🪪 CCCD / Số Căn Cước Công Dân** ([#76](https://github.com/minhtuancn/giapha-os/pull/76) — closes [#66](https://github.com/minhtuancn/giapha-os/issues/66))
+  - Schema: cột `national_id` (unique) và `national_id_verified` trên bảng `persons`
+  - `MemberForm`: ô nhập CCCD (chỉ cho admin, chỉ người còn sống, tối đa 12 ký tự số)
+  - `MemberDetailContent`: hiển thị CCCD trong sidebar admin
+
+- **📅 Sự Kiện Họ Tộc & Ảnh** ([#78](https://github.com/minhtuancn/giapha-os/pull/78) — closes [#61](https://github.com/minhtuancn/giapha-os/issues/61), [#62](https://github.com/minhtuancn/giapha-os/issues/62))
+  - `app/dashboard/family-events/`: CRUD đầy đủ — loại sự kiện (giỗ họ, đám cưới, đám tang, họp mặt, lễ nghi, khác), lọc theo chi, toggle công khai
+  - `utils/activityLogger.ts`: `logActivity()` fire-and-forget, ghi vào `activity_feed`
+  - `components/ActivityFeed.tsx`: hiển thị feed hoạt động với icon theo loại
+  - Trang `/dashboard/timeline`: tích hợp activity feed bên dưới timeline chính
+  - Dashboard: card điều hướng "Sự kiện họ tộc"
+
+- **🔗 Hệ Thống Mời Tham Gia** ([#79](https://github.com/minhtuancn/giapha-os/pull/79) — closes [#64](https://github.com/minhtuancn/giapha-os/issues/64))
+  - `app/dashboard/settings/invitations/`: admin tạo/xoá link mời (nhánh, vai trò, email, số lần dùng, hết hạn)
+  - `app/join/[token]/`: trang đăng ký công khai — xác thực token, hiển thị lỗi expired/full/invalid, form nhập SĐT + tên
+  - `useInvitationToken`: kích hoạt tài khoản + ghi nhận SĐT + tăng `uses_count`
+  - Settings: card liên kết "Quản lý Lời mời"
+
+- **📱 Thông Báo Telegram & Zalo** ([#80](https://github.com/minhtuancn/giapha-os/pull/80) — closes [#63](https://github.com/minhtuancn/giapha-os/issues/63))
+  - `utils/notifyTelegram.ts`: gửi tin Telegram bot (fire-and-forget, parse_mode HTML)
+  - `utils/notifyZalo.ts`: gửi webhook Zalo (fire-and-forget, HTTPS only)
+  - `components/TelegramSettings.tsx`: UI cài đặt bot token, chat ID, SĐT liên kết, Zalo webhook, nút test
+  - Cấu hình trigger: thêm thành viên / sự kiện họ tộc / sinh nhật & giỗ sắp tới
+  - Tích hợp: gửi thông báo tự động khi tạo sự kiện họ tộc mới
+  - Lưu config trong `family_settings` (key-value) — không cần bảng mới
+
+---
+
+## [1.3.0] — 2025
 
 > **Phase 7 — Public Dashboard & Announcements**: Trang chủ công khai cho khách, dashboard nâng cao cho thành viên.
 

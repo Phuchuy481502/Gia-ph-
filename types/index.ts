@@ -95,6 +95,10 @@ export interface Person {
 
   // Phase 6: Branch
   branch_id?: string | null;
+
+  // Phase 7: CCCD / National ID
+  national_id?: string | null;
+  national_id_verified?: boolean;
 }
 
 export interface Relationship {

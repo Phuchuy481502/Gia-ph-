@@ -1142,3 +1142,16 @@ ALTER TABLE public.branch_bots ADD COLUMN IF NOT EXISTS ai_api_key TEXT; -- BYOK
 ALTER TABLE public.branch_bots ADD COLUMN IF NOT EXISTS ai_base_url TEXT; -- custom endpoint
 ALTER TABLE public.branch_bots ADD COLUMN IF NOT EXISTS ai_system_prompt TEXT;
 ALTER TABLE public.branch_bots ADD COLUMN IF NOT EXISTS ai_enabled BOOLEAN DEFAULT false;
+
+-- ==========================================
+-- ENVIRONMENT VARIABLES (Production notes)
+-- ==========================================
+-- SUPABASE_SERVICE_ROLE_KEY : Required for the /api/cron/reminders endpoint
+--   (bypasses RLS to read all persons, family_events, and branch_bots).
+--   Obtain from Supabase Dashboard → Settings → API → service_role key.
+--
+-- CRON_SECRET : MUST be set in production to prevent unauthorized cron calls.
+--   The /api/cron/reminders route checks the Authorization header:
+--     Authorization: Bearer <CRON_SECRET>
+--   Set this in your Vercel environment variables (or .env.local for dev).
+--   If unset, the endpoint is accessible without authentication (dev-only behaviour).

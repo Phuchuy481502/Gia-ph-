@@ -102,6 +102,10 @@ Yêu cầu: máy đã cài [Node.js](https://nodejs.org/en) và [Bun](https://bu
 ```env
 NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY="your-anon-key"
+
+# Dành cho cron job nhắc nhở (tuỳ chọn, khuyến khích đặt trong môi trường production)
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+CRON_SECRET="your-random-secret"
 ```
 
 4. Cài thư viện

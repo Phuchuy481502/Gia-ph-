@@ -32,6 +32,7 @@ interface EnrichedRelationship {
     | "godchild";
   targetPerson: Person;
   note: string | null;
+  marriage_order?: number | null;
 }
 
 export default function RelationshipManager({
@@ -141,6 +142,7 @@ export default function RelationshipManager({
           direction,
           targetPerson: r.target,
           note: r.note,
+          marriage_order: r.type === "marriage" ? r.marriage_order : undefined,
         });
       });
 
@@ -163,6 +165,7 @@ export default function RelationshipManager({
           direction,
           targetPerson: r.target,
           note: r.note,
+          marriage_order: r.type === "marriage" ? r.marriage_order : undefined,
         });
       });
 
@@ -539,6 +542,11 @@ export default function RelationshipManager({
     relationships
       .filter((r) => r.direction === type)
       .sort((a, b) => {
+        if (type === "spouse") {
+          const aOrder = a.marriage_order ?? Infinity;
+          const bOrder = b.marriage_order ?? Infinity;
+          return aOrder - bOrder;
+        }
         const yearA = a.targetPerson.birth_year;
         const yearB = b.targetPerson.birth_year;
         if (yearA == null && yearB == null) return 0;
@@ -546,6 +554,21 @@ export default function RelationshipManager({
         if (yearB == null) return -1;
         return yearA - yearB;
       });
+
+  const handleUpdateMarriageOrder = async (relId: string, newOrder: number) => {
+    try {
+      const { error } = await supabase
+        .from("relationships")
+        .update({ marriage_order: newOrder })
+        .eq("id", relId);
+      if (error) throw error;
+      fetchRelationships();
+    } catch (err: unknown) {
+      const e = err as Error;
+      setError("Không thể cập nhật thứ tự: " + e.message);
+      setTimeout(() => setError(null), 5000);
+    }
+  };
 
   if (loading)
     return (
@@ -624,6 +647,11 @@ export default function RelationshipManager({
                         <span className="text-stone-900 font-medium text-sm">
                           {rel.targetPerson.full_name}
                         </span>
+                        {rel.direction === "spouse" && rel.marriage_order != null && (
+                          <span className="text-xs text-rose-500 font-medium mt-0.5">
+                            {"Thứ " + (rel.marriage_order === 1 ? "cả" : rel.marriage_order === 2 ? "hai" : rel.marriage_order === 3 ? "ba" : rel.marriage_order === 4 ? "tư" : String(rel.marriage_order))}
+                          </span>
+                        )}
                         {rel.note && (
                           <span className="text-xs text-amber-600 font-medium italic mt-0.5">
                             ({rel.note})
@@ -637,30 +665,44 @@ export default function RelationshipManager({
                       </div>
                     </button>
                     {canEdit && rel.direction !== "child_in_law" && (
-                      <button
-                        onClick={() => handleDelete(rel.id)}
-                        className="text-stone-300 hover:text-red-500 hover:bg-red-50 p-2 sm:p-2.5 rounded-lg transition-colors flex items-center justify-center ml-2"
-                        title="Xóa mối quan hệ"
-                        aria-label="Xóa mối quan hệ"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
+                      <div className="flex items-center gap-1 ml-2">
+                        {rel.direction === "spouse" && (
+                          <select
+                            value={rel.marriage_order ?? 1}
+                            onChange={(e) => handleUpdateMarriageOrder(rel.id, parseInt(e.target.value))}
+                            className="text-xs text-rose-600 border border-rose-200 rounded px-1 py-1 bg-white cursor-pointer"
+                            title="Thứ tự vợ/chồng"
+                          >
+                            {[1,2,3,4,5].map(n => (
+                              <option key={n} value={n}>{n === 1 ? "1 (cả)" : n === 2 ? "2 (hai)" : n === 3 ? "3 (ba)" : n === 4 ? "4 (tư)" : "5 (năm)"}</option>
+                            ))}
+                          </select>
+                        )}
+                        <button
+                          onClick={() => handleDelete(rel.id)}
+                          className="text-stone-300 hover:text-red-500 hover:bg-red-50 p-2 sm:p-2.5 rounded-lg transition-colors flex items-center justify-center"
+                          title="Xóa mối quan hệ"
+                          aria-label="Xóa mối quan hệ"
                         >
-                          <path d="M3 6h18" />
-                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                          <line x1="10" x2="10" y1="11" y2="17" />
-                          <line x1="14" x2="14" y1="11" y2="17" />
-                        </svg>
-                      </button>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                            <line x1="10" x2="10" y1="11" y2="17" />
+                            <line x1="14" x2="14" y1="11" y2="17" />
+                          </svg>
+                        </button>
+                      </div>
                     )}
                   </li>
                 ))}

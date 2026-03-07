@@ -111,14 +111,19 @@ export default function FamilyNodeCard({
         </div>
       )}
 
-      {/* 2. Gender Icon + Name */}
-      <div className="flex flex-col items-center justify-center gap-1 w-full px-0.5 sm:px-1 relative z-10">
+      {/* 2. Name (+ saint name prefix) */}
+      <div className="flex flex-col items-center justify-center gap-0.5 w-full px-0.5 sm:px-1 relative z-10">
+        {person.saint_name && (
+          <div className="text-[8px] sm:text-[9px] text-violet-500 font-medium text-center leading-tight truncate w-full">
+            {person.saint_name}
+          </div>
+        )}
         <div
           className={`
-            text-[10px] sm:text-[11px] md:text-xs font-bold text-center leading-tight transition-colors cursor-pointer
+            text-[10px] sm:text-[11px] md:text-xs font-bold text-center leading-tight transition-colors cursor-pointer line-clamp-2 w-full
             ${onClickName ? "text-stone-800 group-hover:text-amber-700 hover:underline" : "text-stone-800 group-hover:text-amber-800"}
           `}
-          title={person.full_name}
+          title={`${person.saint_name ? person.saint_name + " " : ""}${person.full_name}`}
           onClick={(e) => {
             if (onClickName) {
               e.stopPropagation();
@@ -127,13 +132,7 @@ export default function FamilyNodeCard({
             }
           }}
         >
-          {showAvatar
-            ? person.full_name
-            : person.full_name.split(" ").map((word, i) => (
-                <span key={i} className="block">
-                  {word}
-                </span>
-              ))}
+          {person.full_name}
         </div>
       </div>
     </div>

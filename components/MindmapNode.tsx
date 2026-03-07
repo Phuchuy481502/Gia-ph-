@@ -143,6 +143,11 @@ export const MindmapNode = memo(
                       </div>
                     )}
                     <div className="flex flex-col min-w-0 flex-1">
+                      {data.person.saint_name && (
+                        <span className="text-[10px] text-violet-500 font-medium truncate leading-tight">
+                          {data.person.saint_name}
+                        </span>
+                      )}
                       <span className="font-bold text-[14px] text-stone-900 group-hover/card:text-amber-700 transition-colors leading-tight truncate mb-0.5">
                         {data.person.full_name}
                       </span>

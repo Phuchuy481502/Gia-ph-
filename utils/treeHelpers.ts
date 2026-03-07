@@ -3,6 +3,7 @@ import { Person, Relationship } from "@/types";
 export interface SpouseData {
   person: Person;
   note?: string | null;
+  marriage_order?: number | null;
 }
 
 export interface AdjacencyLists {
@@ -36,10 +37,10 @@ export function buildAdjacencyLists(
       if (!spouses.has(r.person_b)) spouses.set(r.person_b, []);
 
       const pB = personsMap.get(r.person_b);
-      if (pB) spouses.get(r.person_a)!.push({ person: pB, note: r.note });
+      if (pB) spouses.get(r.person_a)!.push({ person: pB, note: r.note, marriage_order: r.marriage_order });
 
       const pA = personsMap.get(r.person_a);
-      if (pA) spouses.get(r.person_b)!.push({ person: pA, note: r.note });
+      if (pA) spouses.get(r.person_b)!.push({ person: pA, note: r.note, marriage_order: r.marriage_order });
     } else if (r.type === "biological_child" || r.type === "adopted_child") {
       if (!children.has(r.person_a)) children.set(r.person_a, []);
       const child = personsMap.get(r.person_b);
@@ -56,6 +57,15 @@ export function buildAdjacencyLists(
       const aYear = a.birth_year ?? Infinity;
       const bYear = b.birth_year ?? Infinity;
       return aYear - bYear;
+    });
+  });
+
+  // Sắp xếp vợ/chồng theo marriage_order, sau đó marriage_start_year
+  spouses.forEach((spouseArray) => {
+    spouseArray.sort((a, b) => {
+      const aOrder = a.marriage_order ?? Infinity;
+      const bOrder = b.marriage_order ?? Infinity;
+      return aOrder - bOrder;
     });
   });
 

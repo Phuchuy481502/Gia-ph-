@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowLeft, Info, Mail, MapPin, MessageCircle, ShieldAlert, User } from "lucide-react";
+import { ArrowLeft, GitFork, Info, Mail, MapPin, MessageCircle, Scale, ShieldAlert, User } from "lucide-react";
 import Link from "next/link";
 
 export default function AboutPage() {
@@ -29,13 +29,45 @@ export default function AboutPage() {
             </div>
 
             <div className="max-w-none">
-              <p className="text-stone-600 leading-relaxed text-[15px] mb-8">
+              <p className="text-stone-600 leading-relaxed text-[15px] mb-6">
                 <strong className="text-stone-800">Gia Phả OS</strong> là một
                 giải pháp mã nguồn mở được thiết kế giúp các dòng họ, gia đình
                 tự xây dựng và quản lý cây phả hệ của riêng mình. Dự án giúp bảo
                 tồn và truyền đạt lại thông tin cội nguồn một cách trực quan,
                 hiện đại, và đặc biệt là an toàn.
               </p>
+
+              {/* Fork attribution */}
+              <div className="bg-stone-50 border border-stone-200/60 rounded-2xl p-5 mb-6 flex items-start gap-4">
+                <div className="p-2 bg-stone-100 text-stone-600 rounded-xl shrink-0 mt-0.5">
+                  <GitFork className="size-4" />
+                </div>
+                <div className="text-[14px] text-stone-600 leading-relaxed">
+                  <p className="font-semibold text-stone-800 mb-1">Fork từ dự án gốc</p>
+                  <p>
+                    Dự án này được fork và phát triển mở rộng từ{" "}
+                    <a
+                      href="https://github.com/homielab/giapha-os"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-amber-700 hover:underline"
+                    >
+                      homielab/giapha-os
+                    </a>
+                    {" "}(© 2024 homielab). Mã nguồn fork được duy trì tại{" "}
+                    <a
+                      href="https://github.com/minhtuancn/giapha-os"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-amber-700 hover:underline"
+                    >
+                      minhtuancn/giapha-os
+                    </a>
+                    {" "}(© 2025–2026 Minh Tuấn), phân phối theo{" "}
+                    <strong className="text-stone-700">Giấy phép MIT</strong>.
+                  </p>
+                </div>
+              </div>
 
               <div className="mt-8 mb-4 border-t border-stone-100 pt-8 flex items-center gap-3">
                 <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl">
@@ -158,6 +190,31 @@ export default function AboutPage() {
                     >
                       minhtuancn/giapha-os
                     </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* MIT License notice */}
+              <div className="mt-6 border-t border-stone-100 pt-6 flex items-start gap-4">
+                <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl shrink-0 mt-0.5">
+                  <Scale className="size-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-stone-900 mb-3">Giấy phép (MIT License)</h2>
+                  <div className="bg-stone-50 border border-stone-200/60 rounded-2xl p-5 text-[13.5px] text-stone-600 leading-relaxed space-y-2 font-mono">
+                    <p>Original work Copyright © 2024{" "}
+                      <a href="https://github.com/homielab/giapha-os" target="_blank" rel="noopener noreferrer" className="text-amber-700 hover:underline">homielab</a>
+                    </p>
+                    <p>Modified work Copyright © 2025–2026{" "}
+                      <a href="https://github.com/minhtuancn/giapha-os" target="_blank" rel="noopener noreferrer" className="text-amber-700 hover:underline">Minh Tuấn (minhtuancn)</a>
+                    </p>
+                    <p className="text-stone-500 pt-1 font-sans text-[13px]">
+                      Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+                      and associated documentation files, to deal in the Software without restriction, including
+                      without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+                      and/or sell copies of the Software, subject to the above copyright notice being included in
+                      all copies or substantial portions of the Software.
+                    </p>
                   </div>
                 </div>
               </div>

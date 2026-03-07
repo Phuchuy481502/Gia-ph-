@@ -207,7 +207,7 @@ export default function PhotoGallery({
           onClick={() => setSelectedPhoto(null)}
         >
           <button
-            className="absolute top-4 right-4 text-white/80 hover:text-white"
+            className="absolute top-4 right-4 z-10 text-white/80 hover:text-white"
             onClick={() => setSelectedPhoto(null)}
           >
             <X className="size-8" />
@@ -217,7 +217,7 @@ export default function PhotoGallery({
           <button
             onClick={(e) => { e.stopPropagation(); handlePrev(); }}
             disabled={selectedIndex <= 0}
-            className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/70 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-10 size-10 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/70 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
           >
             <ChevronLeft className="size-6" />
           </button>
@@ -226,7 +226,7 @@ export default function PhotoGallery({
           <button
             onClick={(e) => { e.stopPropagation(); handleNext(); }}
             disabled={selectedIndex >= photos.length - 1}
-            className="absolute right-4 top-1/2 -translate-y-1/2 size-10 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/70 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10 size-10 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/70 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
           >
             <ChevronRight className="size-6" />
           </button>

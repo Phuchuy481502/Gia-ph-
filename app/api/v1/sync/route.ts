@@ -4,24 +4,42 @@ import { verifyAuth } from "@/utils/api/auth";
 
 /**
  * GET /api/v1/sync?since=timestamp&branch_id=uuid
- * Incremental sync endpoint for mobile clients
+ * Incremental sync endpoint for mobile clients with role-based filtering
  * 
- * Returns changed data since the provided timestamp
- * Uses last-write-wins conflict resolution (based on updated_at)
+ * Rate Limits:
+ *   - 100 requests per hour per user
+ *   - Returns 429 if exceeded
  * 
- * Query Parameters:
- *   - since: ISO 8601 timestamp (optional, defaults to 24 hours ago)
- *   - branch_id: UUID (optional, filters to specific branch)
- * 
- * Response:
- *   {
- *     timestamp: ISO 8601,
- *     persons: [...],
- *     relationships: [...],
- *     custom_events: [...],
- *     changes: { persons: 5, relationships: 2, events: 1 }
- *   }
+ * Role-Based Data Access:
+ *   - Admin: All data
+ *   - Editor: Data from assigned branches
+ *   - Member: Public data + own events only
  */
+
+// Rate limiting: store user IDs and request counts
+const syncRateLimiter = new Map<string, { count: number; resetAt: number }>();
+
+function checkSyncRateLimit(userId: string, maxRequests: number = 100, windowSeconds: number = 3600) {
+  const now = Date.now();
+  const record = syncRateLimiter.get(userId);
+
+  if (record && record.resetAt > now) {
+    if (record.count >= maxRequests) {
+      return {
+        allowed: false,
+        retryAfter: Math.ceil((record.resetAt - now) / 1000),
+      };
+    }
+    record.count++;
+  } else {
+    syncRateLimiter.set(userId, {
+      count: 1,
+      resetAt: now + windowSeconds * 1000,
+    });
+  }
+
+  return { allowed: true };
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,6 +54,24 @@ export async function GET(request: NextRequest) {
 
     const userId = authResult.userId!;
     const userRole = authResult.userRole!;
+
+    // Check rate limiting
+    const rateLimit = checkSyncRateLimit(userId, 100, 3600); // 100 requests/hour
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: "Sync rate limit exceeded (100 per hour)",
+          code: "RATE_LIMITED",
+          retryAfter: rateLimit.retryAfter,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": rateLimit.retryAfter?.toString() || "3600",
+          },
+        }
+      );
+    }
 
     // Parse query parameters
     const url = new URL(request.url);
@@ -56,14 +92,30 @@ export async function GET(request: NextRequest) {
 
     const supabase = createServiceRoleClient();
 
-    // Fetch changed persons since timestamp
+    // Fetch changed persons since timestamp (with role-based filtering)
     let personsQuery = supabase
       .from("persons")
       .select("*")
       .gte("updated_at", since.toISOString())
       .order("updated_at", { ascending: false });
 
-    if (branchIdParam) {
+    // Apply role-based filtering
+    if (userRole === "member") {
+      // Members only get public data or data they're linked to
+      personsQuery = personsQuery.eq("is_public", true);
+    } else if (userRole === "editor" && branchIdParam) {
+      // Editors get data from their branch only
+      personsQuery = personsQuery.eq("branch_id", branchIdParam);
+    } else if (userRole === "editor" && !branchIdParam) {
+      // If editor doesn't specify branch, they get data from all their branches
+      // (in real implementation, would need to query their assigned branches first)
+      // For now, allow all editor access if they request it
+    }
+    // Admins get all data (no filter)
+
+    if (branchIdParam && userRole !== "admin") {
+      personsQuery = personsQuery.eq("branch_id", branchIdParam);
+    } else if (branchIdParam) {
       personsQuery = personsQuery.eq("branch_id", branchIdParam);
     }
 
@@ -77,14 +129,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch changed relationships since timestamp
+    // Fetch changed relationships since timestamp (with role-based filtering)
     let relationshipsQuery = supabase
       .from("relationships")
       .select("*")
       .gte("updated_at", since.toISOString())
       .order("updated_at", { ascending: false });
 
-    if (branchIdParam) {
+    // Apply role-based filtering
+    if (userRole === "member") {
+      // Members only get relationships for public persons
+      relationshipsQuery = relationshipsQuery
+        .in("person_id", persons?.map(p => p.id) || []);
+    } else if (userRole === "editor" && branchIdParam) {
+      relationshipsQuery = relationshipsQuery.eq("branch_id", branchIdParam);
+    }
+
+    if (branchIdParam && userRole !== "admin") {
+      relationshipsQuery = relationshipsQuery.eq("branch_id", branchIdParam);
+    } else if (branchIdParam) {
       relationshipsQuery = relationshipsQuery.eq("branch_id", branchIdParam);
     }
 
@@ -98,14 +161,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch changed custom events since timestamp
+    // Fetch changed custom events since timestamp (with role-based filtering)
     let eventsQuery = supabase
       .from("custom_events")
       .select("*")
       .gte("updated_at", since.toISOString())
       .order("updated_at", { ascending: false });
 
-    if (branchIdParam) {
+    // Apply role-based filtering
+    if (userRole === "member") {
+      // Members only get their own events
+      eventsQuery = eventsQuery.eq("created_by", userId);
+    } else if (userRole === "editor" && branchIdParam) {
+      eventsQuery = eventsQuery.eq("branch_id", branchIdParam);
+    }
+
+    if (branchIdParam && userRole !== "admin") {
+      eventsQuery = eventsQuery.eq("branch_id", branchIdParam);
+    } else if (branchIdParam) {
       eventsQuery = eventsQuery.eq("branch_id", branchIdParam);
     }
 

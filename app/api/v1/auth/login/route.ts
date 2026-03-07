@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
     // Fetch user profile with role
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("id, user_role, full_name, email")
+      .select("id, role, full_name, email, is_active, account_status")
       .eq("id", userId)
       .single();
 
@@ -147,7 +147,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userRole = profile.user_role || "member";
+    // Check account status
+    if (!profile.is_active) {
+      return NextResponse.json(
+        {
+          error: "Account is deactivated",
+          code: "ACCOUNT_DISABLED",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (profile.account_status && profile.account_status !== "active") {
+      return NextResponse.json(
+        {
+          error: `Account status: ${profile.account_status}`,
+          code: "ACCOUNT_INACTIVE",
+        },
+        { status: 403 }
+      );
+    }
+
+    const userRole = profile.role || "member";
 
     // Generate JWT token with user info
     // For production, this should use a proper JWT library (jsonwebtoken)

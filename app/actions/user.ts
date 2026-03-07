@@ -151,3 +151,15 @@ export async function batchApproveUsers(userIds: string[]) {
   revalidatePath("/dashboard");
   return { success: true };
 }
+
+export async function linkUserToPerson(userId: string, personId: string | null) {
+  try { await requireAdmin(); } catch { return { error: "Không có quyền thực hiện." }; }
+  const supabase = await getSupabase();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ linked_person_id: personId, updated_at: new Date().toISOString() })
+    .eq("id", userId);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/users");
+  return { success: true };
+}

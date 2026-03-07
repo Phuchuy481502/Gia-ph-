@@ -14,11 +14,19 @@ export default async function AdminUsersPage() {
 
   const supabase = await getSupabase();
 
-  // Fetch all users via RPC
-  const { data: users, error } = await supabase.rpc("get_admin_users");
+  // Fetch all users via RPC + linked_person_id from profiles
+  const [{ data: users, error }, { data: profilesWithLink }, { data: persons }] = await Promise.all([
+    supabase.rpc("get_admin_users"),
+    supabase.from("profiles").select("id, linked_person_id"),
+    supabase.from("persons").select("id, full_name, birth_year, generation").order("generation").order("full_name"),
+  ]);
   if (error) console.error("Error fetching users:", error);
 
-  const typedUsers = (users as AdminUserData[]) || [];
+  const linkMap = new Map((profilesWithLink ?? []).map((p) => [p.id, p.linked_person_id]));
+  const typedUsers: AdminUserData[] = ((users as AdminUserData[]) || []).map((u) => ({
+    ...u,
+    linked_person_id: linkMap.get(u.id) ?? null,
+  }));
 
   // Fetch pending users separately for approval queue
   const { data: pendingProfiles } = await supabase
@@ -59,7 +67,11 @@ export default async function AdminUsersPage() {
         {/* Pending approval queue (shows only when there are pending users) */}
         <PendingApprovalQueue pendingUsers={pendingUsers} />
 
-        <AdminUserList initialUsers={activeUsers.length > 0 ? activeUsers : typedUsers} currentUserId={profile.id} />
+        <AdminUserList
+          initialUsers={activeUsers.length > 0 ? activeUsers : typedUsers}
+          currentUserId={profile.id}
+          persons={persons ?? []}
+        />
       </div>
     </main>
   );

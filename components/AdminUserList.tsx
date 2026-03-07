@@ -4,6 +4,7 @@ import {
   adminCreateUser,
   changeUserRole,
   deleteUser,
+  linkUserToPerson,
   toggleUserStatus,
 } from "@/app/actions/user";
 import config from "@/app/config";
@@ -12,9 +13,17 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 
+interface PersonOption {
+  id: string;
+  full_name: string;
+  birth_year: number | null;
+  generation: number | null;
+}
+
 interface AdminUserListProps {
   initialUsers: AdminUserData[];
   currentUserId: string;
+  persons?: PersonOption[];
 }
 
 interface Notification {
@@ -25,6 +34,7 @@ interface Notification {
 export default function AdminUserList({
   initialUsers,
   currentUserId,
+  persons = [],
 }: AdminUserListProps) {
   const [users, setUsers] = useState<AdminUserData[]>(initialUsers);
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -147,6 +157,20 @@ export default function AdminUserList({
           ? error.message
           : "Lỗi không xác định khi xoá user";
       showNotification(msg, "error");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleLinkPerson = async (userId: string, personId: string | null) => {
+    try {
+      setLoadingId(userId);
+      const result = await linkUserToPerson(userId, personId);
+      if (result?.error) { showNotification(result.error, "error"); return; }
+      setUsers(users.map((u) => u.id === userId ? { ...u, linked_person_id: personId } : u));
+      showNotification(personId ? "Đã liên kết thành công." : "Đã bỏ liên kết.", "success");
+    } catch (error: unknown) {
+      showNotification(error instanceof Error ? error.message : "Lỗi không xác định", "error");
     } finally {
       setLoadingId(null);
     }
@@ -294,6 +318,9 @@ export default function AdminUserList({
                 <th className="px-6 py-4 text-stone-500 font-semibold text-xs">
                   Ngày tạo
                 </th>
+                <th className="px-6 py-4 text-stone-500 font-semibold text-xs">
+                  Thành viên liên kết
+                </th>
                 <th className="px-6 py-4 text-stone-500 font-semibold text-xs text-right">
                   Thao tác
                 </th>
@@ -366,6 +393,25 @@ export default function AdminUserList({
                   </td>
                   <td className="px-6 py-4 text-stone-500">
                     {new Date(user.created_at).toLocaleDateString("vi-VN")}
+                  </td>
+                  <td className="px-6 py-4">
+                    {persons.length > 0 ? (
+                      <select
+                        value={user.linked_person_id ?? ""}
+                        onChange={(e) => handleLinkPerson(user.id, e.target.value || null)}
+                        disabled={loadingId === user.id}
+                        className="bg-stone-50 text-stone-700 border border-stone-200 text-xs rounded-md focus:ring-amber-500 focus:border-amber-500 px-2 py-1 hover:border-stone-300 transition-colors disabled:opacity-50 outline-none max-w-[180px]"
+                      >
+                        <option value="">— Chưa liên kết —</option>
+                        {persons.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.full_name}{p.birth_year ? ` (${p.birth_year})` : ""}{p.generation != null ? ` Đ${p.generation}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="text-stone-400 text-xs">—</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-right">
                     {user.id !== currentUserId && (

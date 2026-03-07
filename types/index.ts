@@ -34,6 +34,7 @@ export interface AdminUserData {
   is_active: boolean;
   account_status?: string;
   created_at: string;
+  linked_person_id?: string | null;
 }
 
 export interface WorkHistoryEntry {

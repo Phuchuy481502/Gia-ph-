@@ -45,8 +45,8 @@ export default async function FamilyTreePage({ searchParams }: PageProps) {
       .map((r) => r.person_b),
   );
 
-  // URL param > user preference > fallback
-  let finalRootId = rootId ?? userPrefs?.default_root_person_id ?? undefined;
+  // URL param > user preference > linked person > fallback to tree root
+  let finalRootId = rootId ?? userPrefs?.default_root_person_id ?? profile?.linked_person_id ?? undefined;
 
   if (!finalRootId || !personsMap.has(finalRootId)) {
     const rootsFallback = persons.filter((p) => !childIds.has(p.id));

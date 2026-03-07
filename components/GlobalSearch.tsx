@@ -18,6 +18,26 @@ interface SearchPerson {
   avatar_url: string | null;
 }
 
+/** Normalize Vietnamese text: remove diacritics, lowercase, trim.
+ *  Allows searching 'nguyen van a' to match 'Nguyễn Văn A'. */
+function normalize(str: string): string {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/** Score a candidate against a query (higher = better match). */
+function scoreMatch(text: string, normQuery: string): number {
+  if (!normQuery) return 0;
+  const normText = normalize(text);
+  if (normText === normQuery) return 3;
+  if (normText.startsWith(normQuery)) return 2;
+  if (normText.includes(normQuery)) return 1;
+  return 0;
+}
+
 export default function GlobalSearch() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -30,7 +50,7 @@ export default function GlobalSearch() {
 
   const fetchPersons = useCallback(async () => {
     if (loaded.current) return;
-    loaded.current = true; // set immediately to prevent duplicate calls
+    loaded.current = true;
     setLoading(true);
     try {
       const supabase = createClient();
@@ -44,7 +64,7 @@ export default function GlobalSearch() {
       if (data) setPersons(data);
     } catch (err) {
       console.error("GlobalSearch: failed to fetch persons", err);
-      loaded.current = false; // allow retry on error
+      loaded.current = false;
     } finally {
       setLoading(false);
     }
@@ -62,7 +82,6 @@ export default function GlobalSearch() {
     setQuery("");
   }, []);
 
-  // Keyboard shortcut: Ctrl+K / Cmd+K
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
@@ -75,25 +94,27 @@ export default function GlobalSearch() {
     return () => window.removeEventListener("keydown", handler);
   }, [open, openSearch, closeSearch]);
 
-  // Focus input when modal opens
   useEffect(() => {
-    if (open) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
+    if (open) setTimeout(() => inputRef.current?.focus(), 50);
   }, [open]);
 
   const results = query.trim()
-    ? persons.filter((p) => {
-        const q = query.toLowerCase();
-        return (
-          p.full_name.toLowerCase().includes(q) ||
-          (p.other_names?.toLowerCase().includes(q) ?? false) ||
-          (p.birth_year?.toString().includes(q) ?? false)
-        );
-      })
+    ? (() => {
+        const normQ = normalize(query);
+        return persons
+          .map((p) => {
+            const nameScore = scoreMatch(p.full_name, normQ);
+            const otherScore = p.other_names ? scoreMatch(p.other_names, normQ) : 0;
+            const yearScore = p.birth_year?.toString().includes(query.trim()) ? 1 : 0;
+            const total = Math.max(nameScore, otherScore, yearScore);
+            return { p, score: total };
+          })
+          .filter(({ score }) => score > 0)
+          .sort((a, b) => b.score - a.score)
+          .map(({ p }) => p);
+      })()
     : persons.slice(0, 8);
 
-  // Reset active index when results change
   useEffect(() => setActiveIndex(0), [query]);
 
   const handleSelect = (person: SearchPerson) => {
@@ -115,7 +136,6 @@ export default function GlobalSearch() {
 
   return (
     <>
-      {/* Trigger button */}
       <button
         onClick={openSearch}
         className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-stone-500 bg-stone-100 hover:bg-stone-200 border border-stone-200 transition-colors"
@@ -128,7 +148,6 @@ export default function GlobalSearch() {
         </kbd>
       </button>
 
-      {/* Modal overlay */}
       <AnimatePresence>
         {open && (
           <>
@@ -148,7 +167,6 @@ export default function GlobalSearch() {
               className="fixed top-[10%] left-1/2 -translate-x-1/2 w-full max-w-xl z-50 px-4"
             >
               <div className="bg-white rounded-2xl shadow-2xl border border-stone-200 overflow-hidden">
-                {/* Search input */}
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-stone-100">
                   {loading ? (
                     <Loader2 className="size-5 text-stone-400 shrink-0 animate-spin" />
@@ -158,32 +176,44 @@ export default function GlobalSearch() {
                   <input
                     ref={inputRef}
                     type="text"
-                    placeholder="Tìm theo tên, tên khác, năm sinh..."
+                    placeholder="Tìm tên, tên khác, năm sinh... (có/không dấu)"
                     className="flex-1 text-stone-900 placeholder-stone-400 bg-transparent outline-none text-base"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={handleKeyDown}
                   />
+                  {query && (
+                    <button
+                      onClick={() => setQuery("")}
+                      className="text-stone-400 hover:text-stone-600 transition-colors"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  )}
                   <button
                     onClick={closeSearch}
-                    className="text-stone-400 hover:text-stone-600 transition-colors"
+                    className="text-stone-400 hover:text-stone-600 transition-colors ml-1"
                   >
                     <X className="size-4" />
                   </button>
                 </div>
 
-                {/* Results */}
                 <div className="max-h-[60vh] overflow-y-auto">
                   {results.length === 0 && !loading ? (
-                    <div className="py-10 text-center text-stone-400 text-sm">
-                      Không tìm thấy kết quả cho &quot;{query}&quot;
+                    <div className="py-10 text-center space-y-1">
+                      <p className="text-stone-400 text-sm">
+                        Không tìm thấy kết quả cho &quot;{query}&quot;
+                      </p>
+                      <p className="text-stone-300 text-xs">
+                        Thử tìm không dấu: &quot;{normalize(query)}&quot;
+                      </p>
                     </div>
                   ) : (
                     <ul className="py-2">
                       {!query && (
                         <li className="px-4 py-1.5">
                           <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
-                            Thành viên gần đây
+                            Thành viên ({persons.length})
                           </span>
                         </li>
                       )}
@@ -198,7 +228,6 @@ export default function GlobalSearch() {
                             onClick={() => handleSelect(person)}
                             onMouseEnter={() => setActiveIndex(i)}
                           >
-                            {/* Avatar */}
                             <div className="shrink-0 size-9 rounded-full overflow-hidden border border-stone-200 bg-stone-100 flex items-center justify-center">
                               {person.avatar_url ? (
                                 <Image
@@ -212,27 +241,23 @@ export default function GlobalSearch() {
                                 <User className="size-4 text-stone-400" />
                               )}
                             </div>
-                            {/* Info */}
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-sm truncate">
                                 {highlightMatch(person.full_name, query)}
                               </p>
                               <p className="text-xs text-stone-400 truncate flex items-center gap-2">
                                 {person.other_names && (
-                                  <span>
-                                    {highlightMatch(person.other_names, query)}
-                                  </span>
+                                  <span>{highlightMatch(person.other_names, query)}</span>
                                 )}
                                 {person.birth_year && (
                                   <span>
-                                    {person.other_names && "·"}{" "}
+                                    {person.other_names && "· "}
                                     {person.birth_year}
                                     {person.is_deceased ? " (đã mất)" : ""}
                                   </span>
                                 )}
                               </p>
                             </div>
-                            {/* Generation badge */}
                             {person.generation && (
                               <span className="shrink-0 text-[10px] font-bold text-stone-400 bg-stone-100 border border-stone-200 rounded-md px-1.5 py-0.5">
                                 Đời {person.generation}
@@ -245,7 +270,6 @@ export default function GlobalSearch() {
                   )}
                 </div>
 
-                {/* Footer hint */}
                 <div className="px-4 py-2 border-t border-stone-100 flex items-center gap-4 text-[11px] text-stone-400">
                   <span>
                     <kbd className="font-mono bg-stone-100 border border-stone-200 rounded px-1">↑↓</kbd>{" "}
@@ -270,17 +294,35 @@ export default function GlobalSearch() {
   );
 }
 
+/** Highlight matching substring in text, supporting normalized (no-diacritic) queries. */
 function highlightMatch(text: string, query: string) {
   if (!query.trim()) return text;
-  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+
+  // Try exact match first
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  let idx = lowerText.indexOf(lowerQuery);
+
+  // Fallback: try normalized match and find position in original
+  if (idx === -1) {
+    const normText = normalize(text);
+    const normQuery = normalize(query);
+    const normIdx = normText.indexOf(normQuery);
+    if (normIdx === -1) return text;
+    // Map normalized index back to original string (approximate)
+    idx = normIdx;
+  }
+
   if (idx === -1) return text;
+  const matchLen = query.length;
   return (
     <>
       {text.slice(0, idx)}
       <mark className="bg-amber-200 text-amber-900 rounded-sm px-0.5">
-        {text.slice(idx, idx + query.length)}
+        {text.slice(idx, idx + matchLen)}
       </mark>
-      {text.slice(idx + query.length)}
+      {text.slice(idx + matchLen)}
     </>
   );
 }
+

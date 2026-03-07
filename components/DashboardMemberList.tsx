@@ -60,12 +60,18 @@ export default function DashboardMemberList({
   }, [initialPersons]);
 
   const filteredPersons = useMemo(() => {
-    const search = searchTerm.toLowerCase();
+    const normSearch = searchTerm
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
     return initialPersons.filter((person) => {
+      const normName = person.full_name
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      const normOther = (person.other_names ?? "")
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
       const matchesSearch =
-        !search ||
-        person.full_name.toLowerCase().includes(search) ||
-        (person.other_names?.toLowerCase().includes(search) ?? false);
+        !normSearch ||
+        normName.includes(normSearch) ||
+        normOther.includes(normSearch) ||
+        (person.birth_year?.toString().includes(normSearch) ?? false);
 
       let matchesFilter = true;
       switch (filterOption) {

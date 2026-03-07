@@ -8,8 +8,10 @@ import { useDashboard } from "./DashboardContext";
 import ExportButton from "./ExportButton";
 
 export interface BaseToolbarProps {
-  hideSpouses: boolean;
-  setHideSpouses: (val: boolean) => void;
+  hideRes: boolean;
+  setHideRes: (val: boolean) => void;
+  hideDau: boolean;
+  setHideDau: (val: boolean) => void;
   hideMales: boolean;
   setHideMales: (val: boolean) => void;
   hideFemales: boolean;
@@ -19,8 +21,10 @@ export interface BaseToolbarProps {
 }
 
 export default function BaseToolbar({
-  hideSpouses,
-  setHideSpouses,
+  hideRes,
+  setHideRes,
+  hideDau,
+  setHideDau,
   hideMales,
   setHideMales,
   hideFemales,
@@ -110,11 +114,20 @@ export default function BaseToolbar({
               <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer hover:text-stone-900 transition-colors select-none">
                 <input
                   type="checkbox"
-                  checked={hideSpouses}
-                  onChange={(e) => setHideSpouses(e.target.checked)}
+                  checked={hideRes}
+                  onChange={(e) => setHideRes(e.target.checked)}
                   className="rounded text-amber-600 focus:ring-amber-500 cursor-pointer size-4"
                 />
-                Ẩn dâu/rể
+                Ẩn rể
+              </label>
+              <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer hover:text-stone-900 transition-colors select-none">
+                <input
+                  type="checkbox"
+                  checked={hideDau}
+                  onChange={(e) => setHideDau(e.target.checked)}
+                  className="rounded text-amber-600 focus:ring-amber-500 cursor-pointer size-4"
+                />
+                Ẩn dâu
               </label>
               <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer hover:text-stone-900 transition-colors select-none">
                 <input

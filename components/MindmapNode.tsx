@@ -14,7 +14,8 @@ export interface MindmapContextData {
   personsMap: Map<string, Person>;
   relationships: Relationship[];
   adj: AdjacencyLists;
-  hideSpouses: boolean;
+  hideRes: boolean;
+  hideDau: boolean;
   hideMales: boolean;
   hideFemales: boolean;
   showAvatar: boolean;
@@ -24,7 +25,8 @@ export interface MindmapContextData {
 
 export const getTreeData = (personId: string, ctx: MindmapContextData) => {
   return getFilteredTreeData(personId, ctx.personsMap, ctx.adj, {
-    hideSpouses: ctx.hideSpouses,
+    hideRes: ctx.hideRes,
+    hideDau: ctx.hideDau,
     hideMales: ctx.hideMales,
     hideFemales: ctx.hideFemales,
   });

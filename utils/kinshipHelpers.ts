@@ -453,6 +453,9 @@ export function computeKinship(
         aCallsB = "Anh " + suffix + " (họ)";
       } else if (res.aCallsB.includes("Em")) {
         aCallsB = "Em" + suffix;
+      } else if (res.aCallsB === "Cháu") {
+        // Cháu ruột của spouseA → gọi A là "Cháu vợ/chồng"
+        aCallsB = "Cháu" + suffix;
       } else if (
         ["Bác", "Chú", "Cô", "Cậu", "Dì"].includes(res.aCallsB) ||
         res.aCallsB.endsWith(" họ")
@@ -482,6 +485,8 @@ export function computeKinship(
         bCallsA = "Chị dâu (họ)";
       } else if (res.bCallsA === "Chú") {
         bCallsA = "Cô";
+      } else if (res.bCallsA === "Cháu họ") {
+        bCallsA = personA.gender === "male" ? "Cháu rể (họ)" : "Cháu dâu (họ)";
       } else if (res.bCallsA === "Chú họ") {
         bCallsA = "Thím họ";
       } else if (res.bCallsA === "Bác họ") {
@@ -585,6 +590,9 @@ export function computeKinship(
         bCallsA = "Chị" + suffix + " (họ)";
       } else if (res.bCallsA === "Anh họ") {
         bCallsA = "Anh" + suffix + " (họ)";
+      } else if (res.bCallsA === "Cháu" || res.bCallsA === "Cháu họ") {
+        // Cháu ruột hoặc cháu họ của spouseB → gọi B là "Cháu chồng/vợ"
+        bCallsA = "Cháu" + suffix;
       } else if (res.bCallsA.includes("Em")) {
         bCallsA = "Em" + suffix;
       } else if (

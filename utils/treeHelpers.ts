@@ -11,7 +11,10 @@ export interface AdjacencyLists {
 }
 
 export interface TreeFilterOptions {
-  hideSpouses: boolean;
+  /** @deprecated use hideRes + hideDau instead */
+  hideSpouses?: boolean;
+  hideRes: boolean;
+  hideDau: boolean;
   hideMales: boolean;
   hideFemales: boolean;
 }
@@ -68,11 +71,12 @@ export function getFilteredTreeData(
   adj: AdjacencyLists,
   filters: TreeFilterOptions
 ) {
-  const { hideSpouses, hideMales, hideFemales } = filters;
+  const { hideRes, hideDau, hideMales, hideFemales } = filters;
 
   let spousesList = adj.spousesByPersonId.get(personId) || [];
   spousesList = spousesList.filter((s) => {
-    if (hideSpouses) return false;
+    if (hideRes && s.person.gender === "male") return false;
+    if (hideDau && s.person.gender === "female") return false;
     if (hideMales && s.person.gender === "male") return false;
     if (hideFemales && s.person.gender === "female") return false;
     return true;

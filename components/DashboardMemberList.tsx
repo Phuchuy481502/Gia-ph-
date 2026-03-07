@@ -2,6 +2,7 @@
 
 import { bulkDeleteMembers } from "@/app/actions/member";
 import PersonCard from "@/components/PersonCard";
+import VerticalText from "@/components/VerticalText";
 import { Branch, Person, Relationship } from "@/types";
 import {
   ArrowUpDown,
@@ -16,6 +17,7 @@ import {
   Search,
   Square,
   Trash2,
+  Type,
   Users,
   X,
 } from "lucide-react";
@@ -36,7 +38,7 @@ export default function DashboardMemberList({
   canEdit?: boolean;
   relationships?: Relationship[];
 }) {
-  const { setShowCreateMember } = useDashboard();
+  const { setShowCreateMember, verticalName, setVerticalName } = useDashboard();
   const { isAdmin } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -398,6 +400,19 @@ export default function DashboardMemberList({
                 {groupByFamily ? <LayoutList className="size-4" /> : <Users className="size-4" />}
                 <span className="hidden sm:inline">{groupByFamily ? "Danh sách" : "Theo gia đình"}</span>
               </button>
+              {/* Vertical names toggle */}
+              <button
+                onClick={() => setVerticalName(!verticalName)}
+                title={verticalName ? "Hiển thị tên ngang" : "Hiển thị tên dọc"}
+                className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-medium shadow-sm transition-all no-print ${
+                  verticalName
+                    ? "border-amber-400 bg-amber-50 text-amber-700"
+                    : "border-stone-200/80 bg-white/90 text-stone-600 hover:border-amber-400 hover:text-amber-600"
+                }`}
+              >
+                <Type className="size-4" />
+                <span className="hidden sm:inline">{verticalName ? "Tên ngang" : "Tên dọc"}</span>
+              </button>
               {canEdit && (
                 <button
                   onClick={() => setShowCreateMember(true)}
@@ -633,11 +648,11 @@ export default function DashboardMemberList({
                     <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {/* Parent card */}
                       <div className="sm:col-span-2 lg:col-span-1">
-                        <PersonCard person={head} />
+                        <PersonCard person={head} showVerticalName={verticalName} />
                       </div>
                       {/* Children */}
                       {children.map((child) => (
-                        <PersonCard key={child.id} person={child} />
+                        <PersonCard key={child.id} person={child} showVerticalName={verticalName} />
                       ))}
                     </div>
                   )}
@@ -648,7 +663,7 @@ export default function DashboardMemberList({
             {familyGroups.standalone.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {familyGroups.standalone.map((person) => (
-                  <PersonCard key={person.id} person={person} />
+                  <PersonCard key={person.id} person={person} showVerticalName={verticalName} />
                 ))}
               </div>
             )}
@@ -683,7 +698,7 @@ export default function DashboardMemberList({
                     )}
                   </div>
                 )}
-                <PersonCard key={person.id} person={person} />
+                <PersonCard person={person} showVerticalName={verticalName} />
               </div>
             ))}
           </div>

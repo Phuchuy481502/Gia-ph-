@@ -5,13 +5,15 @@ import { formatDisplayDate } from "@/utils/dateHelpers";
 import Image from "next/image";
 import { useDashboard } from "./DashboardContext";
 import DefaultAvatar from "./DefaultAvatar";
+import VerticalText from "./VerticalText";
 import { FemaleIcon, MaleIcon } from "./GenderIcons";
 
 interface PersonCardProps {
   person: Person;
+  showVerticalName?: boolean;
 }
 
-export default function PersonCard({ person }: PersonCardProps) {
+export default function PersonCard({ person, showVerticalName = false }: PersonCardProps) {
   const { setMemberModalId } = useDashboard();
 
   const isDeceased = person.is_deceased;
@@ -65,33 +67,73 @@ export default function PersonCard({ person }: PersonCardProps) {
         </div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="text-base text-left sm:text-lg font-bold text-stone-900 dark:text-stone-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors truncate mb-1.5">
-            {person.full_name}
-          </h3>
-          <p className="text-sm font-medium text-stone-500 dark:text-stone-400 truncate flex items-center gap-1.5">
-            <svg
-              className="size-4 shrink-0 text-stone-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+          {showVerticalName ? (
+            <div className="flex items-center gap-2">
+              <VerticalText 
+                text={person.full_name} 
+                fontSize={13}
+                fontWeight="bold"
+                width={32}
+                height={150}
               />
-            </svg>
-            <span className="truncate">
-              {formatDisplayDate(
-                person.birth_year,
-                person.birth_month,
-                person.birth_day,
-              )}
-              {isDeceased &&
-                ` → ${formatDisplayDate(person.death_year, person.death_month, person.death_day)}`}
-            </span>
-          </p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-stone-500 dark:text-stone-400 truncate flex items-center gap-1.5">
+                  <svg
+                    className="size-4 shrink-0 text-stone-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <span className="truncate">
+                    {formatDisplayDate(
+                      person.birth_year,
+                      person.birth_month,
+                      person.birth_day,
+                    )}
+                    {isDeceased &&
+                      ` → ${formatDisplayDate(person.death_year, person.death_month, person.death_day)}`}
+                  </span>
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <h3 className="text-base text-left sm:text-lg font-bold text-stone-900 dark:text-stone-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors truncate mb-1.5">
+                {person.full_name}
+              </h3>
+              <p className="text-sm font-medium text-stone-500 dark:text-stone-400 truncate flex items-center gap-1.5">
+                <svg
+                  className="size-4 shrink-0 text-stone-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                <span className="truncate">
+                  {formatDisplayDate(
+                    person.birth_year,
+                    person.birth_month,
+                    person.birth_day,
+                  )}
+                  {isDeceased &&
+                    ` → ${formatDisplayDate(person.death_year, person.death_month, person.death_day)}`}
+                </span>
+              </p>
+            </>
+          )}
           {(isDeceased ||
             person.is_in_law ||
             person.birth_order != null ||

@@ -117,9 +117,18 @@ export default async function PublicFamilyTreePage({
               {config.siteName}
             </h1>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-stone-400">
-            <Users className="size-3.5" />
-            <span>{count ?? 0} thành viên</span>
+          <div className="flex items-center gap-2.5 text-xs">
+            <Link
+              href={`/public/${token}/tree`}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200/60 rounded-lg hover:bg-amber-100 font-medium transition-colors"
+            >
+              <TreePine className="size-3.5" />
+              Sơ đồ cây
+            </Link>
+            <div className="flex items-center gap-1 text-stone-400">
+              <Users className="size-3.5" />
+              <span>{count ?? 0} thành viên</span>
+            </div>
           </div>
         </div>
       </header>

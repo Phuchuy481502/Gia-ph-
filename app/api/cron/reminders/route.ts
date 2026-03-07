@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { sendTelegramMessage } from "@/utils/bot/telegram";
+import { buildReminderEmailHtml, sendEmail } from "@/utils/email/resend";
 
 function getServiceSupabase() {
   return createClient(
@@ -273,6 +274,22 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   const supabase = getServiceSupabase();
 
+  // Load email config from family_settings (if configured)
+  const [{ data: resendKeyRow }, { data: notifEmailRow }, { data: familyNameRow }] =
+    await Promise.all([
+      supabase.from("family_settings").select("setting_value").eq("setting_key", "resend_api_key").maybeSingle(),
+      supabase.from("family_settings").select("setting_value").eq("setting_key", "notification_email").maybeSingle(),
+      supabase.from("family_settings").select("setting_value").eq("setting_key", "family_name").maybeSingle(),
+    ]);
+
+  const resendApiKey = (resendKeyRow as { setting_value?: string } | null)?.setting_value ?? process.env.RESEND_API_KEY ?? null;
+  const notificationEmail = (notifEmailRow as { setting_value?: string } | null)?.setting_value ?? null;
+  const familyName = (familyNameRow as { setting_value?: string } | null)?.setting_value ?? "Gia Phả";
+  const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://giapha-os-rose.vercel.app";
+
+  // Email: collect today's upcoming events for digest
+  const emailEvents: Array<{ type: "birthday" | "death_anniversary"; personName: string; daysUntil: number; dateLabel: string }> = [];
+
   const { data: bots, error } = await supabase
     .from("branch_bots")
     .select("id, branch_id, platform, bot_token, chat_id, is_active")
@@ -284,18 +301,76 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  if (!bots || bots.length === 0) {
-    return NextResponse.json({ message: "No active bots found" });
-  }
-
   let processed = 0;
 
-  for (const bot of bots as BranchBot[]) {
-    await processDeathAnniversaries(supabase, bot);
-    await processFamilyEvents(supabase, bot);
-    await processBirthdays(supabase, bot);
-    processed++;
+  if (bots && bots.length > 0) {
+    for (const bot of bots as BranchBot[]) {
+      await processDeathAnniversaries(supabase, bot);
+      await processFamilyEvents(supabase, bot);
+      await processBirthdays(supabase, bot);
+      processed++;
+    }
   }
 
-  return NextResponse.json({ message: "Reminders processed", bots: processed });
+  // Send email digest if Resend is configured
+  if (resendApiKey && notificationEmail) {
+    const today = getVietnamDate(0);
+    const todayMonth = today.getUTCMonth() + 1;
+    const todayDay = today.getUTCDate();
+    const formatDDMMVal = (m: number, d: number) =>
+      `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}`;
+
+    const { data: persons } = await supabase
+      .from("persons")
+      .select("id, full_name, birth_month, birth_day, death_month, death_day, is_deceased");
+
+    for (const p of (persons ?? []) as Person[]) {
+      if (!p.is_deceased && p.birth_month && p.birth_day) {
+        // Check next 3 days for birthdays
+        for (let offset = 0; offset <= 3; offset++) {
+          const d = getVietnamDate(offset);
+          if (p.birth_month === d.getUTCMonth() + 1 && p.birth_day === d.getUTCDate()) {
+            emailEvents.push({ type: "birthday", personName: p.full_name, daysUntil: offset, dateLabel: formatDDMMVal(p.birth_month, p.birth_day) });
+            break;
+          }
+        }
+      }
+      if (p.is_deceased && p.death_month && p.death_day) {
+        for (let offset = 0; offset <= 3; offset++) {
+          const d = getVietnamDate(offset);
+          if (p.death_month === d.getUTCMonth() + 1 && p.death_day === d.getUTCDate()) {
+            emailEvents.push({ type: "death_anniversary", personName: p.full_name, daysUntil: offset, dateLabel: formatDDMMVal(p.death_month, p.death_day) });
+            break;
+          }
+        }
+      }
+    }
+
+    if (emailEvents.length > 0) {
+      // Send one email per event (for clarity)
+      for (const evt of emailEvents) {
+        const html = buildReminderEmailHtml({
+          familyName,
+          type: evt.type,
+          personName: evt.personName,
+          daysUntil: evt.daysUntil,
+          dateLabel: evt.dateLabel,
+          dashboardUrl,
+        });
+        const typeLabel = evt.type === "birthday" ? "Sinh nhật" : "Ngày giỗ";
+        await sendEmail(resendApiKey, {
+          to: notificationEmail,
+          subject: `[${familyName}] ${typeLabel}: ${evt.personName}`,
+          html,
+        });
+      }
+    }
+  }
+
+  return NextResponse.json({
+    message: "Reminders processed",
+    bots: processed,
+    emailEvents: emailEvents.length,
+    emailConfigured: !!(resendApiKey && notificationEmail),
+  });
 }

@@ -320,3 +320,35 @@ export async function deleteAnnouncement(id: string) {
   revalidatePath("/dashboard/settings");
   revalidatePath("/");
 }
+
+export async function saveResendEmailSettings(
+  resendApiKey: string,
+  notificationEmail: string,
+): Promise<void> {
+  const isAdmin = await getIsAdmin();
+  if (!isAdmin) throw new Error("Unauthorized");
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (notificationEmail && !emailRegex.test(notificationEmail)) {
+    throw new Error("Email không hợp lệ");
+  }
+
+  const supabase = await getSupabase();
+
+  const upserts = [];
+  if (resendApiKey !== undefined) {
+    upserts.push({ setting_key: "resend_api_key", setting_value: resendApiKey });
+  }
+  if (notificationEmail !== undefined) {
+    upserts.push({ setting_key: "notification_email", setting_value: notificationEmail });
+  }
+
+  if (upserts.length > 0) {
+    const { error } = await supabase
+      .from("family_settings")
+      .upsert(upserts, { onConflict: "setting_key" });
+    if (error) throw new Error(error.message);
+  }
+
+  revalidatePath("/dashboard/settings");
+}

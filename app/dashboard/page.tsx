@@ -20,8 +20,10 @@ import {
   Shield,
   Star,
   UserCheck,
+  UserPlus,
   Users,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 /* ── Event type helpers ───────────────────────────────────────────── */
@@ -54,7 +56,7 @@ export default async function DashboardLaunchpad() {
   const { data: persons } = await supabase
     .from("persons")
     .select(
-      "id, full_name, birth_year, birth_month, birth_day, death_year, death_month, death_day, is_deceased, gender, created_at",
+      "id, full_name, birth_year, birth_month, birth_day, death_year, death_month, death_day, is_deceased, gender, created_at, avatar_url",
     );
 
   const { data: customEvents } = await supabase
@@ -399,9 +401,19 @@ export default async function DashboardLaunchpad() {
               <Users className="size-4 text-stone-400" />
               Thành viên mới nhất
             </h2>
-            <Link href="/dashboard/members" className="text-xs text-amber-600 hover:underline font-medium flex items-center gap-1">
-              Xem tất cả <ArrowRight className="size-3" />
-            </Link>
+            <div className="flex items-center gap-3">
+              {/* Quick action: add member */}
+              <Link
+                href="/dashboard/members/new"
+                className="flex items-center gap-1.5 text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors"
+              >
+                <UserPlus className="size-3" />
+                Thêm thành viên
+              </Link>
+              <Link href="/dashboard/members" className="text-xs text-amber-600 hover:underline font-medium flex items-center gap-1">
+                Xem tất cả <ArrowRight className="size-3" />
+              </Link>
+            </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-stone-50">
             {recentMembers.map((m) => (
@@ -410,8 +422,18 @@ export default async function DashboardLaunchpad() {
                 href={`/dashboard/members/${m.id}`}
                 className="flex flex-col items-center gap-2 p-4 hover:bg-stone-50/50 transition-colors"
               >
-                <div className="size-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 text-sm font-bold shrink-0">
-                  {m.is_deceased ? "✝" : m.full_name?.[0] ?? "?"}
+                <div className="size-12 rounded-full overflow-hidden bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-400 text-sm font-bold shrink-0">
+                  {(m as { avatar_url?: string | null }).avatar_url ? (
+                    <Image
+                      src={(m as { avatar_url: string }).avatar_url}
+                      alt={m.full_name}
+                      width={48}
+                      height={48}
+                      className="object-cover size-full"
+                    />
+                  ) : (
+                    <span className="text-base">{m.is_deceased ? "✝" : m.full_name?.[0] ?? "?"}</span>
+                  )}
                 </div>
                 <div className="text-center min-w-0 w-full">
                   <p className="text-xs font-semibold text-stone-700 truncate">{m.full_name}</p>

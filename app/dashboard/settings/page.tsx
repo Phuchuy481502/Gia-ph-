@@ -1,5 +1,6 @@
 import NotificationSettings from "@/components/NotificationSettings";
 import PublicDashboardSettings from "@/components/PublicDashboardSettings";
+import ResendEmailSettings from "@/components/ResendEmailSettings";
 import TelegramSettings from "@/components/TelegramSettings";
 import { getProfile, getSupabase } from "@/utils/supabase/queries";
 import { GitBranch, Link2, Settings } from "lucide-react";
@@ -89,6 +90,11 @@ export default async function SettingsPage() {
         initialTelegram={telegramZaloSettings.telegram}
         initialZalo={telegramZaloSettings.zalo}
         initialTriggers={telegramZaloSettings.triggers}
+      />
+
+      <ResendEmailSettings
+        initialApiKey={settingsMap.resend_api_key ?? null}
+        initialNotificationEmail={settingsMap.notification_email ?? null}
       />
 
       {/* Branch / Chi Management quick link */}

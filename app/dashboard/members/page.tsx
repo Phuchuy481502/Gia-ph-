@@ -16,17 +16,22 @@ export default async function FamilyTreePage({ searchParams }: PageProps) {
 
   const supabase = await getSupabase();
 
-  const [personsRes, relsRes, userPrefs] = await Promise.all([
+  const [personsRes, relsRes, branchesRes, userPrefs] = await Promise.all([
     supabase
       .from("persons")
       .select("*")
       .order("birth_year", { ascending: true, nullsFirst: false }),
     supabase.from("relationships").select("*"),
+    supabase
+      .from("branches")
+      .select("id, name, description, display_order, root_person_id, created_at")
+      .order("display_order"),
     getUserPreferences().catch(() => null),
   ]);
 
   const persons = personsRes.data || [];
   const relationships = relsRes.data || [];
+  const branches = branchesRes.data || [];
 
   // Prepare map and roots for tree views
   const personsMap = new Map();
@@ -58,6 +63,7 @@ export default async function FamilyTreePage({ searchParams }: PageProps) {
       <DashboardViews
         persons={persons}
         relationships={relationships}
+        branches={branches}
         canEdit={canEdit}
       />
 

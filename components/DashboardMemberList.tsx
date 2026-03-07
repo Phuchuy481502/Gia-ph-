@@ -2,7 +2,7 @@
 
 import { bulkDeleteMembers } from "@/app/actions/member";
 import PersonCard from "@/components/PersonCard";
-import { Person } from "@/types";
+import { Branch, Person } from "@/types";
 import {
   ArrowUpDown,
   CheckSquare,
@@ -16,7 +16,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useDashboard } from "./DashboardContext";
 import PrintMemberList from "./PrintMemberList";
@@ -24,24 +24,52 @@ import { useUser } from "./UserProvider";
 
 export default function DashboardMemberList({
   initialPersons,
+  branches = [],
   canEdit = false,
 }: {
   initialPersons: Person[];
+  branches?: Branch[];
   canEdit?: boolean;
 }) {
   const { setShowCreateMember } = useDashboard();
   const { isAdmin } = useUser();
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortOption, setSortOption] = useState("updated_desc");
-  const [filterOption, setFilterOption] = useState("all");
-  const [generationFilter, setGenerationFilter] = useState("all");
+  const searchParams = useSearchParams();
+
+  // Initialize state from URL params
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get("q") ?? "");
+  const [sortOption, setSortOption] = useState(() => searchParams.get("sort") ?? "updated_desc");
+  const [filterOption, setFilterOption] = useState(() => searchParams.get("filter") ?? "all");
+  const [generationFilter, setGenerationFilter] = useState(() => searchParams.get("gen") ?? "all");
+  const [branchFilter, setBranchFilter] = useState(() => searchParams.get("branch") ?? "all");
+  const [birthYearMin, setBirthYearMin] = useState(() => searchParams.get("ymin") ?? "");
+  const [birthYearMax, setBirthYearMax] = useState(() => searchParams.get("ymax") ?? "");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkMode, setBulkMode] = useState(false);
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync filters to URL params
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const set = (key: string, val: string, def: string) => {
+      if (val && val !== def) params.set(key, val); else params.delete(key);
+    };
+    set("q", searchTerm, "");
+    set("sort", sortOption, "updated_desc");
+    set("filter", filterOption, "all");
+    set("gen", generationFilter, "all");
+    set("branch", branchFilter, "all");
+    set("ymin", birthYearMin, "");
+    set("ymax", birthYearMax, "");
+    const newSearch = params.toString();
+    const current = searchParams.toString();
+    if (newSearch !== current) {
+      router.replace(`?${newSearch}`, { scroll: false });
+    }
+  }, [searchTerm, sortOption, filterOption, generationFilter, branchFilter, birthYearMin, birthYearMax, router, searchParams]);
 
   const showToast = useCallback((type: "success" | "error", message: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -62,6 +90,8 @@ export default function DashboardMemberList({
   const filteredPersons = useMemo(() => {
     const normSearch = searchTerm
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const yMin = birthYearMin ? parseInt(birthYearMin) : null;
+    const yMax = birthYearMax ? parseInt(birthYearMax) : null;
     return initialPersons.filter((person) => {
       const normName = person.full_name
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -106,9 +136,17 @@ export default function DashboardMemberList({
         generationFilter === "all" ||
         person.generation === parseInt(generationFilter);
 
-      return matchesSearch && matchesFilter && matchesGeneration;
+      const matchesBranch =
+        branchFilter === "all" ||
+        (branchFilter === "none" ? !person.branch_id : person.branch_id === branchFilter);
+
+      const matchesBirthYear =
+        (yMin === null || (person.birth_year ?? 0) >= yMin) &&
+        (yMax === null || (person.birth_year ?? 9999) <= yMax);
+
+      return matchesSearch && matchesFilter && matchesGeneration && matchesBranch && matchesBirthYear;
     });
-  }, [initialPersons, searchTerm, filterOption, generationFilter]);
+  }, [initialPersons, searchTerm, filterOption, generationFilter, branchFilter, birthYearMin, birthYearMax]);
 
   const sortedPersons = useMemo(() => {
     return [...filteredPersons].sort((a, b) => {
@@ -252,7 +290,8 @@ export default function DashboardMemberList({
   );
 
   const isFiltered =
-    searchTerm !== "" || filterOption !== "all" || generationFilter !== "all";
+    searchTerm !== "" || filterOption !== "all" || generationFilter !== "all" ||
+    branchFilter !== "all" || birthYearMin !== "" || birthYearMax !== "";
 
   return (
     <>
@@ -415,6 +454,48 @@ export default function DashboardMemberList({
               </div>
             )}
 
+            {/* Filter by branch */}
+            {branches.length > 0 && (
+              <div className="relative">
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-amber-500 pointer-events-none" />
+                <select
+                  className="appearance-none bg-white/90 text-stone-700 w-full sm:w-44 pl-9 pr-8 py-2.5 rounded-xl border border-stone-200/80 shadow-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 hover:border-amber-300 font-medium text-sm transition-all focus:bg-white"
+                  value={branchFilter}
+                  onChange={(e) => setBranchFilter(e.target.value)}
+                >
+                  <option value="all">Tất cả chi/nhánh</option>
+                  <option value="none">Chưa phân chi</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+                {chevronDown}
+              </div>
+            )}
+
+            {/* Filter by birth year range */}
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                placeholder="Năm từ"
+                min={1000}
+                max={new Date().getFullYear()}
+                className="bg-white/90 text-stone-700 w-24 px-3 py-2.5 rounded-xl border border-stone-200/80 shadow-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 text-sm transition-all"
+                value={birthYearMin}
+                onChange={(e) => setBirthYearMin(e.target.value)}
+              />
+              <span className="text-stone-400 text-xs">—</span>
+              <input
+                type="number"
+                placeholder="đến"
+                min={1000}
+                max={new Date().getFullYear()}
+                className="bg-white/90 text-stone-700 w-20 px-3 py-2.5 rounded-xl border border-stone-200/80 shadow-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 text-sm transition-all"
+                value={birthYearMax}
+                onChange={(e) => setBirthYearMax(e.target.value)}
+              />
+            </div>
+
             {/* Sort */}
             <div className="relative">
               <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-stone-400 pointer-events-none" />
@@ -452,6 +533,9 @@ export default function DashboardMemberList({
                     setSearchTerm("");
                     setFilterOption("all");
                     setGenerationFilter("all");
+                    setBranchFilter("all");
+                    setBirthYearMin("");
+                    setBirthYearMax("");
                   }}
                   className="text-xs text-amber-600 hover:text-amber-700 font-semibold hover:underline transition-colors"
                 >

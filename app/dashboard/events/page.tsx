@@ -18,7 +18,7 @@ export default async function EventsPage() {
       ),
     supabase
       .from("custom_events")
-      .select("id, name, content, event_date, location, created_by"),
+      .select("id, name, content, event_date, location, created_by, lunar_month, lunar_day"),
   ]);
 
   const persons = personsRes.data || [];

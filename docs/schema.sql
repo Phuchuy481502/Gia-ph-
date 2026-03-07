@@ -120,9 +120,11 @@ CREATE TABLE IF NOT EXISTS public.custom_events (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
   content TEXT,
-  event_date DATE NOT NULL,
+  event_date DATE,
   location TEXT,
   created_by UUID REFERENCES public.profiles(id) DEFAULT auth.uid(),
+  lunar_month SMALLINT CHECK (lunar_month BETWEEN 1 AND 12),
+  lunar_day SMALLINT CHECK (lunar_day BETWEEN 1 AND 30),
   
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()

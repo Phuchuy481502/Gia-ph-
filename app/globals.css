@@ -61,7 +61,9 @@ select {
   nav,
   header,
   .no-print,
-  [data-no-print] {
+  [data-no-print],
+  aside,
+  .sidebar {
     display: none !important;
   }
 
@@ -71,6 +73,19 @@ select {
 
   .print-show {
     display: block !important;
+  }
+
+  /* Tree container: allow overflow to expand for printing */
+  .tree-scroll-container {
+    overflow: visible !important;
+    max-height: none !important;
+    transform: none !important;
+  }
+
+  /* Make the tree full width when printing */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
   }
 
   @page {

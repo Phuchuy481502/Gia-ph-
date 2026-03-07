@@ -9,6 +9,7 @@ import {
   Calendar as CalendarIcon,
   Loader2,
   MapPin,
+  Moon,
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -33,19 +34,29 @@ export default function CustomEventModal({
   const [eventDate, setEventDate] = useState(eventToEdit?.event_date || "");
   const [location, setLocation] = useState(eventToEdit?.location || "");
   const [content, setContent] = useState(eventToEdit?.content || "");
+  const [isLunar, setIsLunar] = useState(!!(eventToEdit?.lunar_month && eventToEdit?.lunar_day));
+  const [lunarMonth, setLunarMonth] = useState(eventToEdit?.lunar_month?.toString() || "");
+  const [lunarDay, setLunarDay] = useState(eventToEdit?.lunar_day?.toString() || "");
 
   useEffect(() => {
     if (isOpen) {
       if (eventToEdit) {
         setName(eventToEdit.name);
-        setEventDate(eventToEdit.event_date);
+        setEventDate(eventToEdit.event_date || "");
         setLocation(eventToEdit.location || "");
         setContent(eventToEdit.content || "");
+        const hasLunar = !!(eventToEdit.lunar_month && eventToEdit.lunar_day);
+        setIsLunar(hasLunar);
+        setLunarMonth(eventToEdit.lunar_month?.toString() || "");
+        setLunarDay(eventToEdit.lunar_day?.toString() || "");
       } else {
         setName("");
         setEventDate("");
         setLocation("");
         setContent("");
+        setIsLunar(false);
+        setLunarMonth("");
+        setLunarDay("");
       }
       setError(null);
     }
@@ -70,11 +81,15 @@ export default function CustomEventModal({
 
     try {
       const supabase = createClient();
+      const lm = isLunar ? parseInt(lunarMonth) : null;
+      const ld = isLunar ? parseInt(lunarDay) : null;
       const payload = {
         name,
-        event_date: eventDate,
+        event_date: isLunar ? (eventDate || null) : eventDate,
         location: location || null,
         content: content || null,
+        lunar_month: lm || null,
+        lunar_day: ld || null,
       };
 
       let resultError;
@@ -221,22 +236,75 @@ export default function CustomEventModal({
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-stone-700 mb-1.5">
-                      Ngày diễn ra (Dương lịch){" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-stone-400" />
+                  {/* Lunar toggle */}
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer select-none">
                       <input
-                        required
-                        type="date"
-                        className={`${inputClasses} pl-11`}
-                        value={eventDate}
-                        onChange={(e) => setEventDate(e.target.value)}
+                        type="checkbox"
+                        checked={isLunar}
+                        onChange={(e) => setIsLunar(e.target.checked)}
+                        className="rounded text-amber-600 focus:ring-amber-500 cursor-pointer size-4"
                       />
-                    </div>
+                      <Moon className="size-4 text-indigo-500" />
+                      Ngày âm lịch (lặp lại hàng năm)
+                    </label>
                   </div>
+
+                  {isLunar ? (
+                    <div>
+                      <label className="block text-sm font-semibold text-stone-700 mb-1.5">
+                        Ngày âm lịch <span className="text-red-500">*</span>
+                      </label>
+                      <div className="flex gap-3">
+                        <div className="flex-1">
+                          <label className="block text-xs text-stone-500 mb-1">Tháng ÂL (1–12)</label>
+                          <input
+                            required={isLunar}
+                            type="number"
+                            min={1}
+                            max={12}
+                            className={inputClasses}
+                            placeholder="Tháng"
+                            value={lunarMonth}
+                            onChange={(e) => setLunarMonth(e.target.value)}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-xs text-stone-500 mb-1">Ngày ÂL (1–30)</label>
+                          <input
+                            required={isLunar}
+                            type="number"
+                            min={1}
+                            max={30}
+                            className={inputClasses}
+                            placeholder="Ngày"
+                            value={lunarDay}
+                            onChange={(e) => setLunarDay(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-stone-400 mt-1.5">
+                        Sự kiện sẽ tự động tính ngày dương lịch tương ứng mỗi năm.
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-semibold text-stone-700 mb-1.5">
+                        Ngày diễn ra (Dương lịch){" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-stone-400" />
+                        <input
+                          required={!isLunar}
+                          type="date"
+                          className={`${inputClasses} pl-11`}
+                          value={eventDate}
+                          onChange={(e) => setEventDate(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-sm font-semibold text-stone-700 mb-1.5">

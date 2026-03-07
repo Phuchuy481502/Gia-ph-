@@ -1,7 +1,7 @@
 "use client";
 
 import { Person, Relationship } from "@/types";
-import { BookOpen, Download, Loader2 } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, Download, Loader2, Settings2 } from "lucide-react";
 import { useState } from "react";
 
 interface Props {
@@ -10,13 +10,58 @@ interface Props {
   familyName?: string;
 }
 
+/** BFS to find all descendant IDs (inclusive) of a root person */
+function getSubtreeIds(rootId: string, relationships: Relationship[], maxDepth: number): Set<string> {
+  const childrenMap = new Map<string, string[]>();
+  for (const r of relationships) {
+    if (r.type === "biological_child" || r.type === "adopted_child") {
+      const children = childrenMap.get(r.person_a) ?? [];
+      children.push(r.person_b);
+      childrenMap.set(r.person_a, children);
+    }
+  }
+  const visited = new Set<string>();
+  const queue: Array<{ id: string; depth: number }> = [{ id: rootId, depth: 0 }];
+  while (queue.length > 0) {
+    const { id, depth } = queue.shift()!;
+    if (visited.has(id)) continue;
+    visited.add(id);
+    if (depth < maxDepth) {
+      for (const child of childrenMap.get(id) ?? []) {
+        queue.push({ id: child, depth: depth + 1 });
+      }
+    }
+  }
+  return visited;
+}
+
 export default function FamilyBookExport({ persons, relationships, familyName = "Gia Phả Dòng Họ" }: Props) {
   const [loading, setLoading] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+  const [rootPersonId, setRootPersonId] = useState<string>("");
+  const [maxDepth, setMaxDepth] = useState<number>(99);
 
   const handleExport = async () => {
     setLoading(true);
     try {
       const { default: jsPDF } = await import("jspdf");
+
+      // Filter persons by branch if a root is selected
+      let filteredPersons = persons;
+      if (rootPersonId) {
+        const subtreeIds = getSubtreeIds(rootPersonId, relationships, maxDepth);
+        filteredPersons = persons.filter((p) => subtreeIds.has(p.id));
+      } else if (maxDepth < 99) {
+        // Only depth limit, no root — filter by generation
+        const rootGen = Math.min(...persons.map((p) => p.generation ?? 0).filter(Boolean));
+        filteredPersons = persons.filter((p) => (p.generation ?? rootGen) <= rootGen + maxDepth);
+      }
+
+      const filteredRelationships = relationships.filter(
+        (r) =>
+          filteredPersons.some((p) => p.id === r.person_a) &&
+          filteredPersons.some((p) => p.id === r.person_b),
+      );
 
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const pageW = 210;
@@ -48,17 +93,17 @@ export default function FamilyBookExport({ persons, relationships, familyName = 
       doc.text("Ho So Gia Dinh", pageW / 2, 96, { align: "center" });
 
       // Stats summary on cover
-      const totalLiving = persons.filter((p) => !p.is_deceased).length;
-      const totalDeceased = persons.filter((p) => p.is_deceased).length;
-      const generations = new Set(persons.map((p) => p.generation).filter(Boolean));
+      const totalLiving = filteredPersons.filter((p) => !p.is_deceased).length;
+      const totalDeceased = filteredPersons.filter((p) => p.is_deceased).length;
+      const generations = new Set(filteredPersons.map((p) => p.generation).filter(Boolean));
 
       doc.setFontSize(11);
       doc.setTextColor(80, 60, 30);
       const stats = [
-        `Tong so thanh vien: ${persons.length}`,
+        `Tong so thanh vien: ${filteredPersons.length}`,
         `Con song: ${totalLiving}  |  Da mat: ${totalDeceased}`,
         `So the he: ${generations.size}`,
-        `So moi quan he: ${relationships.length}`,
+        `So moi quan he: ${filteredRelationships.length}`,
       ];
       stats.forEach((line, i) => {
         doc.text(line, pageW / 2, 140 + i * 10, { align: "center" });
@@ -75,7 +120,7 @@ export default function FamilyBookExport({ persons, relationships, familyName = 
       // Group members by generation
       const byGeneration = new Map<number, Person[]>();
       const noGen: Person[] = [];
-      persons.forEach((p) => {
+      filteredPersons.forEach((p) => {
         if (p.generation != null) {
           const arr = byGeneration.get(p.generation) ?? [];
           arr.push(p);
@@ -182,13 +227,13 @@ export default function FamilyBookExport({ persons, relationships, familyName = 
 
       y = 38;
       const statItems = [
-        ["Tong so thanh vien", String(persons.length)],
+        ["Tong so thanh vien", String(filteredPersons.length)],
         ["Con song", String(totalLiving)],
         ["Da mat", String(totalDeceased)],
         ["So the he", String(generations.size)],
-        ["So moi quan he", String(relationships.length)],
-        ["Nam sinh som nhat", String(Math.min(...persons.map((p) => p.birth_year ?? 9999).filter((y) => y < 9999)) || "—")],
-        ["Nam sinh muon nhat", String(Math.max(...persons.map((p) => p.birth_year ?? 0).filter((y) => y > 0)) || "—")],
+        ["So moi quan he", String(filteredRelationships.length)],
+        ["Nam sinh som nhat", String(Math.min(...filteredPersons.map((p) => p.birth_year ?? 9999).filter((y) => y < 9999)) || "—")],
+        ["Nam sinh muon nhat", String(Math.max(...filteredPersons.map((p) => p.birth_year ?? 0).filter((y) => y > 0)) || "—")],
       ];
 
       statItems.forEach(([label, value], i) => {
@@ -226,21 +271,76 @@ export default function FamilyBookExport({ persons, relationships, familyName = 
   };
 
   return (
-    <button
-      onClick={handleExport}
-      disabled={loading}
-      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-sm font-medium transition-colors shadow-sm"
-      title="Xuất Sách Gia Phả PDF"
-    >
-      {loading ? (
-        <Loader2 className="size-4 animate-spin" />
-      ) : (
-        <>
-          <BookOpen className="size-4" />
-          <Download className="size-3" />
-        </>
-      )}
-      <span>{loading ? "Đang xuất..." : "Xuất PDF Gia Phả"}</span>
-    </button>
+    <div className="flex flex-col gap-3">
+      {/* Settings panel */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowConfig(!showConfig)}
+          className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-800 transition-colors"
+        >
+          <Settings2 className="size-3.5" />
+          <span>Tuỳ chọn xuất</span>
+          {showConfig ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+        </button>
+
+        {showConfig && (
+          <div className="mt-2 p-4 bg-stone-50 border border-stone-200 rounded-xl space-y-3 text-sm">
+            <div>
+              <label className="block text-xs font-semibold text-stone-600 mb-1">
+                Xuất từ người gốc (theo nhánh)
+              </label>
+              <select
+                className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 bg-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none"
+                value={rootPersonId}
+                onChange={(e) => setRootPersonId(e.target.value)}
+              >
+                <option value="">— Toàn bộ dòng họ —</option>
+                {persons
+                  .slice()
+                  .sort((a, b) => (a.generation ?? 99) - (b.generation ?? 99) || a.full_name.localeCompare(b.full_name))
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.full_name}{p.generation ? ` (Đ${p.generation})` : ""}
+                      {p.birth_year ? ` — ${p.birth_year}` : ""}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-stone-600 mb-1">
+                Số đời xuất (tính từ người gốc)
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                className="w-28 rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 bg-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none"
+                value={maxDepth === 99 ? "" : maxDepth}
+                placeholder="Không giới hạn"
+                onChange={(e) => setMaxDepth(e.target.value ? parseInt(e.target.value) : 99)}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <button
+        onClick={handleExport}
+        disabled={loading}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-sm font-medium transition-colors shadow-sm w-fit"
+        title="Xuất Sách Gia Phả PDF"
+      >
+        {loading ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <>
+            <BookOpen className="size-4" />
+            <Download className="size-3" />
+          </>
+        )}
+        <span>{loading ? "Đang xuất..." : "Xuất PDF Gia Phả"}</span>
+      </button>
+    </div>
   );
 }

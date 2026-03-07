@@ -28,9 +28,14 @@ export default function FamilyNodeCard({
   isRingVisible = false,
   isPlusVisible = false,
 }: FamilyNodeCardProps) {
-  const { showAvatar, setMemberModalId } = useDashboard();
+  const { showAvatar, setMemberModalId, verticalName } = useDashboard();
 
   const isDeceased = person.is_deceased;
+
+  // Vertical writing mode when enabled and in compact (no-avatar) mode
+  const nameStyle = !showAvatar && verticalName
+    ? { writingMode: "vertical-rl" as const, textOrientation: "mixed" as const, maxHeight: "5rem" }
+    : undefined;
 
   const content = (
     <div
@@ -123,6 +128,7 @@ export default function FamilyNodeCard({
             text-[10px] sm:text-[11px] md:text-xs font-bold text-center leading-tight transition-colors cursor-pointer line-clamp-2 w-full
             ${onClickName ? "text-stone-800 group-hover:text-amber-700 hover:underline" : "text-stone-800 group-hover:text-amber-800"}
           `}
+          style={nameStyle}
           title={`${person.saint_name ? person.saint_name + " " : ""}${person.full_name}`}
           onClick={(e) => {
             if (onClickName) {

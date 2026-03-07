@@ -11,6 +11,8 @@ interface DashboardState {
   setShowCreateMember: (show: boolean) => void;
   showAvatar: boolean;
   setShowAvatar: (show: boolean) => void;
+  verticalName: boolean;
+  setVerticalName: (val: boolean) => void;
   view: ViewMode;
   setView: (view: ViewMode) => void;
   rootId: string | null;
@@ -26,6 +28,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [memberModalId, setMemberModalId] = useState<string | null>(null);
   const [showCreateMember, setShowCreateMember] = useState(false);
   const [showAvatar, setShowAvatar] = useState<boolean>(true);
+  const [verticalName, setVerticalName] = useState<boolean>(false);
   const [view, setViewState] = useState<ViewMode>("list");
   const [rootId, setRootIdState] = useState<string | null>(null);
 
@@ -112,6 +115,8 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         setShowCreateMember,
         showAvatar,
         setShowAvatar: updateAvatar,
+        verticalName,
+        setVerticalName,
         view,
         setView,
         rootId,
@@ -135,6 +140,8 @@ export function useDashboard(): DashboardState {
       setShowCreateMember: () => {},
       showAvatar: true,
       setShowAvatar: () => {},
+      verticalName: false,
+      setVerticalName: () => {},
       view: "list",
       setView: () => {},
       rootId: null,

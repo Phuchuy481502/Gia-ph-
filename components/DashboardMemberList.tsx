@@ -2,12 +2,15 @@
 
 import { bulkDeleteMembers } from "@/app/actions/member";
 import PersonCard from "@/components/PersonCard";
-import { Branch, Person } from "@/types";
+import { Branch, Person, Relationship } from "@/types";
 import {
   ArrowUpDown,
   CheckSquare,
+  ChevronDown,
+  ChevronRight,
   Download,
   Filter,
+  LayoutList,
   Plus,
   Printer,
   Search,
@@ -26,10 +29,12 @@ export default function DashboardMemberList({
   initialPersons,
   branches = [],
   canEdit = false,
+  relationships = [],
 }: {
   initialPersons: Person[];
   branches?: Branch[];
   canEdit?: boolean;
+  relationships?: Relationship[];
 }) {
   const { setShowCreateMember } = useDashboard();
   const { isAdmin } = useUser();
@@ -49,6 +54,8 @@ export default function DashboardMemberList({
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [groupByFamily, setGroupByFamily] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync filters to URL params
@@ -293,6 +300,42 @@ export default function DashboardMemberList({
     searchTerm !== "" || filterOption !== "all" || generationFilter !== "all" ||
     branchFilter !== "all" || birthYearMin !== "" || birthYearMax !== "";
 
+  // Build family groups: each "parent" (or root person) + their direct children
+  const familyGroups = useMemo(() => {
+    if (!groupByFamily) return null;
+    const personsById = new Map(sortedPersons.map((p) => [p.id, p]));
+    // Build parent→children from relationships
+    const childToParents = new Map<string, string[]>();
+    const parentToChildren = new Map<string, string[]>();
+    for (const r of relationships) {
+      if (r.type === "biological_child" || r.type === "adopted_child") {
+        const arr = parentToChildren.get(r.person_a) ?? [];
+        arr.push(r.person_b);
+        parentToChildren.set(r.person_a, arr);
+        const pa = childToParents.get(r.person_b) ?? [];
+        pa.push(r.person_a);
+        childToParents.set(r.person_b, pa);
+      }
+    }
+    // A "family head" is anyone in filteredPersons who has children in filteredPersons
+    const groups: Array<{ head: Person; children: Person[] }> = [];
+    const includedAsChild = new Set<string>();
+    for (const p of sortedPersons) {
+      const children = (parentToChildren.get(p.id) ?? [])
+        .filter((cid) => personsById.has(cid))
+        .map((cid) => personsById.get(cid)!);
+      if (children.length > 0) {
+        groups.push({ head: p, children });
+        children.forEach((c) => includedAsChild.add(c.id));
+      }
+    }
+    // Add persons that aren't heads or children as standalone
+    const standalone = sortedPersons.filter(
+      (p) => !groups.some((g) => g.head.id === p.id) && !includedAsChild.has(p.id),
+    );
+    return { groups, standalone };
+  }, [groupByFamily, sortedPersons, relationships]);
+
   return (
     <>
       {/* Toast notification */}
@@ -341,6 +384,19 @@ export default function DashboardMemberList({
               >
                 <Printer className="size-4" />
                 <span className="hidden sm:inline">In danh sách</span>
+              </button>
+              {/* Family group view toggle */}
+              <button
+                onClick={() => setGroupByFamily(!groupByFamily)}
+                title={groupByFamily ? "Chuyển về danh sách phẳng" : "Nhóm theo gia đình"}
+                className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-medium shadow-sm transition-all no-print ${
+                  groupByFamily
+                    ? "border-amber-400 bg-amber-50 text-amber-700"
+                    : "border-stone-200/80 bg-white/90 text-stone-600 hover:border-amber-400 hover:text-amber-600"
+                }`}
+              >
+                {groupByFamily ? <LayoutList className="size-4" /> : <Users className="size-4" />}
+                <span className="hidden sm:inline">{groupByFamily ? "Danh sách" : "Theo gia đình"}</span>
               </button>
               {canEdit && (
                 <button
@@ -548,38 +604,90 @@ export default function DashboardMemberList({
       </div>
 
       {sortedPersons.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedPersons.map((person, index) => (
-            <div
-              key={person.id}
-              className={`relative rounded-2xl transition-all duration-150 ${
-                bulkMode
-                  ? `cursor-pointer ring-2 ${
-                      selectedIds.has(person.id)
-                        ? "ring-amber-400 bg-amber-50"
-                        : "ring-transparent hover:ring-amber-200"
-                    }`
-                  : ""
-              }`}
-              onClick={
-                bulkMode
-                  ? (e) => handleToggleRow(person.id, index, e.shiftKey)
-                  : undefined
-              }
-            >
-              {bulkMode && (
-                <div className="absolute top-3 left-3 z-10 pointer-events-none">
-                  {selectedIds.has(person.id) ? (
-                    <CheckSquare className="size-5 text-amber-500 drop-shadow" />
-                  ) : (
-                    <Square className="size-5 text-stone-400 drop-shadow" />
+        groupByFamily && familyGroups ? (
+          /* ── Family Group View ───────────────────────────────── */
+          <div className="space-y-4">
+            {familyGroups.groups.map(({ head, children }) => {
+              const isCollapsed = collapsedGroups.has(head.id);
+              return (
+                <div key={head.id} className="border border-stone-200 rounded-2xl overflow-hidden bg-white/60">
+                  {/* Group header */}
+                  <button
+                    className="w-full flex items-center gap-2 px-4 py-3 bg-stone-50 hover:bg-amber-50 transition-colors text-left"
+                    onClick={() => {
+                      setCollapsedGroups((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(head.id)) next.delete(head.id);
+                        else next.add(head.id);
+                        return next;
+                      });
+                    }}
+                  >
+                    {isCollapsed ? <ChevronRight className="size-4 text-stone-400 shrink-0" /> : <ChevronDown className="size-4 text-amber-500 shrink-0" />}
+                    <span className="font-semibold text-stone-800 text-sm">{head.full_name}</span>
+                    {head.generation && <span className="text-xs text-stone-400">Đ{head.generation}</span>}
+                    {head.birth_year && <span className="text-xs text-stone-400">({head.birth_year})</span>}
+                    <span className="ml-auto text-xs text-stone-400">{children.length} con</span>
+                  </button>
+                  {!isCollapsed && (
+                    <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* Parent card */}
+                      <div className="sm:col-span-2 lg:col-span-1">
+                        <PersonCard person={head} />
+                      </div>
+                      {/* Children */}
+                      {children.map((child) => (
+                        <PersonCard key={child.id} person={child} />
+                      ))}
+                    </div>
                   )}
                 </div>
-              )}
-              <PersonCard key={person.id} person={person} />
-            </div>
-          ))}
-        </div>
+              );
+            })}
+            {/* Standalone persons */}
+            {familyGroups.standalone.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {familyGroups.standalone.map((person) => (
+                  <PersonCard key={person.id} person={person} />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ── Flat Grid View ──────────────────────────────────── */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sortedPersons.map((person, index) => (
+              <div
+                key={person.id}
+                className={`relative rounded-2xl transition-all duration-150 ${
+                  bulkMode
+                    ? `cursor-pointer ring-2 ${
+                        selectedIds.has(person.id)
+                          ? "ring-amber-400 bg-amber-50"
+                          : "ring-transparent hover:ring-amber-200"
+                      }`
+                    : ""
+                }`}
+                onClick={
+                  bulkMode
+                    ? (e) => handleToggleRow(person.id, index, e.shiftKey)
+                    : undefined
+                }
+              >
+                {bulkMode && (
+                  <div className="absolute top-3 left-3 z-10 pointer-events-none">
+                    {selectedIds.has(person.id) ? (
+                      <CheckSquare className="size-5 text-amber-500 drop-shadow" />
+                    ) : (
+                      <Square className="size-5 text-stone-400 drop-shadow" />
+                    )}
+                  </div>
+                )}
+                <PersonCard key={person.id} person={person} />
+              </div>
+            ))}
+          </div>
+        )
       ) : (
         <div className="text-center py-12 text-stone-400 italic">
           {initialPersons.length > 0

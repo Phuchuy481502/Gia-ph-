@@ -79,7 +79,7 @@ export default function DashboardViews({
 
         {currentView === "list" && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full relative z-10">
-          <DashboardMemberList initialPersons={persons} branches={branches} canEdit={canEdit} />
+          <DashboardMemberList initialPersons={persons} branches={branches} canEdit={canEdit} relationships={relationships} />
           </div>
         )}
 

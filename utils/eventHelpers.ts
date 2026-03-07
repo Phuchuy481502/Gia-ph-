@@ -31,6 +31,10 @@ export interface CustomEventRecord {
   event_date: string;
   location: string | null;
   created_by: string | null;
+  /** Lunar month (1–12) when this is a recurring annual lunar event */
+  lunar_month?: number | null;
+  /** Lunar day (1–30) when this is a recurring annual lunar event */
+  lunar_day?: number | null;
 }
 
 /**
@@ -152,8 +156,33 @@ export function computeEvents(
     }
   }
 
-  // ── Custom Events (solar) ───────────────────────────────────────
+  // ── Custom Events (solar or recurring lunar) ───────────────────────────────────────
   for (const ce of customEvents) {
+    // If this is a recurring lunar event, compute next solar occurrence
+    if (ce.lunar_month && ce.lunar_day) {
+      try {
+        const next = nextSolarForLunar(ce.lunar_month, ce.lunar_day, today);
+        if (!next) continue;
+        const daysUntil = Math.round(
+          (next.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+        );
+        events.push({
+          personId: ce.id,
+          personName: ce.name,
+          type: "custom_event",
+          nextOccurrence: next,
+          daysUntil,
+          eventDateLabel: `${ce.lunar_day.toString().padStart(2, "0")}/${ce.lunar_month.toString().padStart(2, "0")} ÂL`,
+          isDeceased: false,
+          location: ce.location,
+          content: ce.content,
+        });
+      } catch {
+        // Skip if conversion fails
+      }
+      continue;
+    }
+
     if (!ce.event_date) continue;
     const [y, m, d] = ce.event_date.split("-").map(Number);
     if (!y || !m || !d) continue;

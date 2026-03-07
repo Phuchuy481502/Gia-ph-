@@ -31,7 +31,7 @@ export default function BaseToolbar({
   setHideFemales,
   children,
 }: BaseToolbarProps) {
-  const { showAvatar, setShowAvatar } = useDashboard();
+  const { showAvatar, setShowAvatar, verticalName, setVerticalName } = useDashboard();
   const [showFilters, setShowFilters] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -105,6 +105,15 @@ export default function BaseToolbar({
                   className="rounded text-amber-600 focus:ring-amber-500 cursor-pointer size-4"
                 />
                 Tối giản
+              </label>
+              <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer hover:text-stone-900 transition-colors select-none">
+                <input
+                  type="checkbox"
+                  checked={verticalName}
+                  onChange={(e) => setVerticalName(e.target.checked)}
+                  className="rounded text-amber-600 focus:ring-amber-500 cursor-pointer size-4"
+                />
+                Tên dọc
               </label>
 
               <div className="h-px w-full bg-stone-100 my-1 font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"></div>

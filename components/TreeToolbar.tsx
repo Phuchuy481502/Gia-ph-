@@ -1,4 +1,4 @@
-import { ZoomIn, ZoomOut } from "lucide-react";
+import { Printer, ZoomIn, ZoomOut } from "lucide-react";
 import BaseToolbar, { BaseToolbarProps } from "./BaseToolbar";
 
 interface TreeToolbarProps extends BaseToolbarProps {
@@ -43,6 +43,17 @@ export default function TreeToolbar({
           <ZoomIn className="size-4" />
         </button>
       </div>
+
+      {/* Print Button */}
+      <button
+        onClick={() => window.print()}
+        data-no-print
+        className="flex items-center gap-2 px-4 h-10 rounded-full font-semibold text-sm shadow-sm border bg-white/80 text-stone-600 border-stone-200/60 hover:bg-white hover:text-stone-900 hover:shadow-md backdrop-blur-md transition-all"
+        title="In cây gia phả"
+      >
+        <Printer className="size-4" />
+        <span className="hidden sm:inline">In</span>
+      </button>
     </BaseToolbar>
   );
 }

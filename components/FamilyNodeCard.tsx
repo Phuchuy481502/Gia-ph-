@@ -62,6 +62,13 @@ export default function FamilyNodeCard({
         </div>
       )}
 
+      {/* Generation Badge */}
+      {person.generation != null && (
+        <div className="absolute top-1 left-1 z-20 text-[9px] font-bold text-emerald-700 bg-emerald-50/80 border border-emerald-200/60 rounded px-1 leading-tight">
+          Đ{person.generation}
+        </div>
+      )}
+
       {/* Expand/Collapse Indicator */}
       {isExpandable && (
         <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white border border-stone-200/80 rounded-full size-6 flex items-center justify-center shadow-md z-100 text-stone-500 hover:text-amber-600 transition-colors">

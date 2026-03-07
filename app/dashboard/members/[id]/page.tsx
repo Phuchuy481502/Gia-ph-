@@ -1,7 +1,7 @@
 import DeleteMemberButton from "@/components/DeleteMemberButton";
 import MemberDetailContent from "@/components/MemberDetailContent";
 import { getProfile, getSupabase } from "@/utils/supabase/queries";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -82,6 +82,14 @@ export default async function MemberDetailPage({ params }: PageProps) {
         </div>
         {canEdit && (
           <div className="flex items-center gap-2.5">
+            <Link
+              href={`/dashboard/members/new?parent=${id}`}
+              className="flex items-center gap-1.5 px-3 py-2 bg-amber-50/80 text-amber-700 border border-amber-200/60 rounded-lg hover:bg-amber-100 font-medium text-sm transition-all shadow-sm"
+              title="Thêm con của thành viên này"
+            >
+              <UserPlus className="size-4" />
+              <span className="hidden sm:inline">Thêm con</span>
+            </Link>
             <Link
               href={`/dashboard/members/${id}/edit`}
               className="px-4 py-2 bg-stone-100/80 text-stone-700 rounded-lg hover:bg-stone-200 hover:text-stone-900 font-medium text-sm transition-all shadow-sm"

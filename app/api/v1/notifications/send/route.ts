@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/utils/supabase/api";
+import { timingSafeEqual } from "crypto";
 
 /**
  * POST /api/v1/notifications/send
@@ -18,9 +19,19 @@ import { createServiceRoleClient } from "@/utils/supabase/api";
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify CRON_SECRET
-    const cronToken = request.headers.get("x-cron-secret");
-    if (cronToken !== process.env.CRON_SECRET) {
+    // Verify CRON_SECRET using timing-safe comparison
+    const cronToken = request.headers.get("x-cron-secret") || "";
+    const cronSecret = process.env.CRON_SECRET || "";
+    
+    try {
+      if (!timingSafeEqual(Buffer.from(cronToken), Buffer.from(cronSecret))) {
+        return NextResponse.json(
+          { error: "Unauthorized", code: "UNAUTHORIZED" },
+          { status: 401 }
+        );
+      }
+    } catch {
+      // timingSafeEqual throws if buffers are different lengths
       return NextResponse.json(
         { error: "Unauthorized", code: "UNAUTHORIZED" },
         { status: 401 }
@@ -121,7 +132,7 @@ export async function POST(request: NextRequest) {
 
         sent++;
       } catch (error) {
-        console.error(`Failed to send to token ${tokenRecord.token}:`, error);
+        console.error(`Failed to send to token ID ${tokenRecord.id}:`, error);
         failed++;
 
         try {

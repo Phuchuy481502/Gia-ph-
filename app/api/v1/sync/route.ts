@@ -103,21 +103,22 @@ export async function GET(request: NextRequest) {
     if (userRole === "member") {
       // Members only get public data or data they're linked to
       personsQuery = personsQuery.eq("is_public", true);
-    } else if (userRole === "editor" && branchIdParam) {
-      // Editors get data from their branch only
+    } else if (userRole === "editor") {
+      // Editors require branch_id parameter
+      if (!branchIdParam) {
+        return NextResponse.json(
+          { error: "Editors must specify branch_id parameter", code: "MISSING_BRANCH_ID" },
+          { status: 400 }
+        );
+      }
       personsQuery = personsQuery.eq("branch_id", branchIdParam);
-    } else if (userRole === "editor" && !branchIdParam) {
-      // If editor doesn't specify branch, they get data from all their branches
-      // (in real implementation, would need to query their assigned branches first)
-      // For now, allow all editor access if they request it
+    } else if (userRole === "admin") {
+      // Admins can optionally filter by branch
+      if (branchIdParam) {
+        personsQuery = personsQuery.eq("branch_id", branchIdParam);
+      }
     }
-    // Admins get all data (no filter)
-
-    if (branchIdParam && userRole !== "admin") {
-      personsQuery = personsQuery.eq("branch_id", branchIdParam);
-    } else if (branchIdParam) {
-      personsQuery = personsQuery.eq("branch_id", branchIdParam);
-    }
+    // Admins without branch_id get all data (no filter)
 
     const { data: persons, error: personsError } = await personsQuery;
 
@@ -141,14 +142,16 @@ export async function GET(request: NextRequest) {
       // Members only get relationships for public persons
       relationshipsQuery = relationshipsQuery
         .in("person_id", persons?.map(p => p.id) || []);
-    } else if (userRole === "editor" && branchIdParam) {
-      relationshipsQuery = relationshipsQuery.eq("branch_id", branchIdParam);
-    }
-
-    if (branchIdParam && userRole !== "admin") {
-      relationshipsQuery = relationshipsQuery.eq("branch_id", branchIdParam);
-    } else if (branchIdParam) {
-      relationshipsQuery = relationshipsQuery.eq("branch_id", branchIdParam);
+    } else if (userRole === "editor") {
+      // Editors need branch_id (already validated above)
+      if (branchIdParam) {
+        relationshipsQuery = relationshipsQuery.eq("branch_id", branchIdParam);
+      }
+    } else if (userRole === "admin") {
+      // Admins can optionally filter by branch
+      if (branchIdParam) {
+        relationshipsQuery = relationshipsQuery.eq("branch_id", branchIdParam);
+      }
     }
 
     const { data: relationships, error: relationshipsError } = await relationshipsQuery;
@@ -172,14 +175,16 @@ export async function GET(request: NextRequest) {
     if (userRole === "member") {
       // Members only get their own events
       eventsQuery = eventsQuery.eq("created_by", userId);
-    } else if (userRole === "editor" && branchIdParam) {
-      eventsQuery = eventsQuery.eq("branch_id", branchIdParam);
-    }
-
-    if (branchIdParam && userRole !== "admin") {
-      eventsQuery = eventsQuery.eq("branch_id", branchIdParam);
-    } else if (branchIdParam) {
-      eventsQuery = eventsQuery.eq("branch_id", branchIdParam);
+    } else if (userRole === "editor") {
+      // Editors need branch_id (already validated above)
+      if (branchIdParam) {
+        eventsQuery = eventsQuery.eq("branch_id", branchIdParam);
+      }
+    } else if (userRole === "admin") {
+      // Admins can optionally filter by branch
+      if (branchIdParam) {
+        eventsQuery = eventsQuery.eq("branch_id", branchIdParam);
+      }
     }
 
     const { data: events, error: eventsError } = await eventsQuery;

@@ -97,6 +97,30 @@ const translations = {
 // HELPERS
 // ============================================================================
 
+/**
+ * Escapes HTML special characters to prevent XSS attacks
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/**
+ * Validates that a URL is safe (http/https only)
+ */
+function isValidHttpUrl(urlString: string): boolean {
+  try {
+    const url = new URL(urlString);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function getEmoji(type: ReminderType): string {
   switch (type) {
     case "birthday":
@@ -144,23 +168,27 @@ export function buildBirthdayEmail(params: EmailTemplateParams): {
     params.language,
   );
 
+  const escapedPersonName = escapeHtml(params.personName);
+  const escapedFamilyName = escapeHtml(params.familyName);
+  const safeUrl = isValidHttpUrl(params.dashboardUrl) ? params.dashboardUrl : "";
+
   const subject =
     params.language === "vi"
-      ? `[Gia Phả] Sinh nhật của ${params.personName}`
+      ? `[Gia Phả] Sinh nhật của ${escapedPersonName}`
       : params.language === "en"
-        ? `[Gia Phả] ${params.personName}'s Birthday`
-        : `[Gia Phả] ${params.personName}的生日`;
+        ? `[Gia Phả] ${escapedPersonName}'s Birthday`
+        : `[Gia Phả] ${escapedPersonName}的生日`;
 
   const html = buildEmailTemplate({
     language: params.language,
     emoji,
     typeLabel,
-    familyName: params.familyName,
-    personName: params.personName,
+    familyName: escapedFamilyName,
+    personName: escapedPersonName,
     dateLabel: params.dateLabel,
     lunarDateStr,
     timeLabel,
-    dashboardUrl: params.dashboardUrl,
+    dashboardUrl: safeUrl,
     headerColor: "#b45309", // Amber
   });
 
@@ -181,23 +209,27 @@ export function buildDeathAnniversaryEmail(params: EmailTemplateParams): {
     params.language,
   );
 
+  const escapedPersonName = escapeHtml(params.personName);
+  const escapedFamilyName = escapeHtml(params.familyName);
+  const safeUrl = isValidHttpUrl(params.dashboardUrl) ? params.dashboardUrl : "";
+
   const subject =
     params.language === "vi"
-      ? `[Gia Phả] Ngày giỗ của ${params.personName}`
+      ? `[Gia Phả] Ngày giỗ của ${escapedPersonName}`
       : params.language === "en"
-        ? `[Gia Phả] ${params.personName}'s Death Anniversary`
-        : `[Gia Phả] ${params.personName}的忌日`;
+        ? `[Gia Phả] ${escapedPersonName}'s Death Anniversary`
+        : `[Gia Phả] ${escapedPersonName}的忌日`;
 
   const html = buildEmailTemplate({
     language: params.language,
     emoji,
     typeLabel,
-    familyName: params.familyName,
-    personName: params.personName,
+    familyName: escapedFamilyName,
+    personName: escapedPersonName,
     dateLabel: params.dateLabel,
     lunarDateStr,
     timeLabel,
-    dashboardUrl: params.dashboardUrl,
+    dashboardUrl: safeUrl,
     headerColor: "#6b5c3e", // Dark brown
   });
 
@@ -218,23 +250,28 @@ export function buildCustomEventEmail(params: EmailTemplateParams & { eventName?
     params.language,
   );
 
+  const escapedPersonName = escapeHtml(params.personName);
+  const escapedFamilyName = escapeHtml(params.familyName);
+  const escapedEventName = escapeHtml(params.eventName || "");
+  const safeUrl = isValidHttpUrl(params.dashboardUrl) ? params.dashboardUrl : "";
+
   const subject =
     params.language === "vi"
-      ? `[Gia Phả] Sự kiện: ${params.eventName || params.dateLabel}`
+      ? `[Gia Phả] Sự kiện: ${escapedEventName || params.dateLabel}`
       : params.language === "en"
-        ? `[Gia Phả] Event: ${params.eventName || params.dateLabel}`
-        : `[Gia Phả] 事件：${params.eventName || params.dateLabel}`;
+        ? `[Gia Phả] Event: ${escapedEventName || params.dateLabel}`
+        : `[Gia Phả] 事件：${escapedEventName || params.dateLabel}`;
 
   const html = buildEmailTemplate({
     language: params.language,
     emoji,
     typeLabel,
-    familyName: params.familyName,
-    personName: params.personName,
+    familyName: escapedFamilyName,
+    personName: escapedPersonName,
     dateLabel: params.dateLabel,
     lunarDateStr,
     timeLabel,
-    dashboardUrl: params.dashboardUrl,
+    dashboardUrl: safeUrl,
     headerColor: "#059669", // Green
   });
 
@@ -250,6 +287,8 @@ export function buildWeeklySummaryEmail(params: WeeklySummaryParams): {
   html: string;
 } {
   const trans = translations[params.language];
+  const escapedFamilyName = escapeHtml(params.familyName);
+  const safeUrl = isValidHttpUrl(params.dashboardUrl) ? params.dashboardUrl : "";
 
   const eventRows = params.events
     .map((evt) => {
@@ -262,11 +301,12 @@ export function buildWeeklySummaryEmail(params: WeeklySummaryParams): {
             : trans.custom_event;
       const lunarStr = formatLunarDate(evt.lunarMonth, evt.lunarDay, params.language);
       const timeLabel = getTimeLabel(evt.daysUntil, params.language);
+      const escapedPersonName = escapeHtml(evt.personName);
 
       return `
         <tr style="border-bottom: 1px solid #e7e0d4;">
           <td style="padding: 12px; font-size: 14px;">
-            <strong>${emoji} ${evt.personName}</strong><br>
+            <strong>${emoji} ${escapedPersonName}</strong><br>
             <span style="color: #6b5c3e;">${typeLabel} - ${evt.dateLabel}${
               lunarStr ? `<br>${lunarStr}` : ""
             }</span><br>
@@ -289,13 +329,13 @@ export function buildWeeklySummaryEmail(params: WeeklySummaryParams): {
     <!-- Header -->
     <div style="background: linear-gradient(135deg, #b45309, #92400e); padding: 28px 32px; text-align: center;">
       <h1 style="margin: 0; color: #fff; font-size: 22px;">📬 ${trans.weeklySummary}</h1>
-      <p style="margin: 8px 0 0; color: #fde68a; font-size: 14px;">${params.familyName}</p>
+      <p style="margin: 8px 0 0; color: #fde68a; font-size: 14px;">${escapedFamilyName}</p>
     </div>
 
     <!-- Body -->
     <div style="padding: 28px 32px;">
       <p style="margin: 0 0 16px; font-size: 16px; color: #3c2f1a;">
-        ${trans.weeklyGreeting} ${params.familyName},
+        ${trans.weeklyGreeting} ${escapedFamilyName},
       </p>
       <p style="margin: 0 0 20px; color: #6b5c3e; line-height: 1.6;">
         ${trans.weeklyIntro}
@@ -310,7 +350,7 @@ export function buildWeeklySummaryEmail(params: WeeklySummaryParams): {
 
       <!-- CTA Button -->
       <div style="text-align: center; margin: 28px 0;">
-        <a href="${params.dashboardUrl}/dashboard"
+        <a href="${safeUrl}/dashboard"
            style="display: inline-block; background: #b45309; color: #fff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 15px; font-weight: 600;">
           ${trans.viewFamily}
         </a>
@@ -321,7 +361,7 @@ export function buildWeeklySummaryEmail(params: WeeklySummaryParams): {
     <div style="padding: 16px 32px; background: #faf7f2; border-top: 1px solid #e7e0d4;">
       <p style="margin: 0; font-size: 12px; color: #a8a29e; line-height: 1.6;">
         ${trans.emailFrom}. 
-        <a href="${params.dashboardUrl}/dashboard/settings?tab=notifications" style="color: #b45309; text-decoration: none;">
+        <a href="${safeUrl}/dashboard/settings?tab=notifications" style="color: #b45309; text-decoration: none;">
           ${trans.unsubscribeLink}
         </a> 
         ${trans.toDisable}.

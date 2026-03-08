@@ -45,14 +45,22 @@ export async function verifyAuth(request: NextRequest): Promise<AuthResult> {
     // Fetch user role from profile
     const { data: profile } = await supabase
       .from("profiles")
-      .select("user_role")
+      .select("role, account_status")
       .eq("id", data.user.id)
       .single();
+
+    // Check if account is suspended or deleted
+    if (!profile || profile.account_status !== "active") {
+      return {
+        valid: false,
+        error: "Account is not active",
+      };
+    }
 
     return {
       valid: true,
       userId: data.user.id,
-      userRole: profile?.user_role || "member",
+      userRole: profile?.role || "member",
     };
   } catch (error) {
     console.error("Auth verification error:", error);

@@ -108,7 +108,7 @@ export const MindmapNode = memo(
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
                 className={`group/card relative flex flex-wrap items-center gap-2 bg-white/60 rounded-2xl border border-stone-200/60 p-2 sm:p-2.5 shadow-sm hover:border-amber-300 hover:shadow-md hover:bg-white/90 transition-all duration-300 overflow-hidden cursor-pointer
-                ${data.person.is_deceased ? "opacity-80 grayscale-[0.3]" : ""}`}
+                ${data.person.is_deceased ? "opacity-70 grayscale" : ""}`}
                 onClick={() => ctx.setMemberModalId(data.person.id)}
               >
                 <div className="flex items-center gap-2.5 relative z-10 w-full">
@@ -204,7 +204,7 @@ export const MindmapNode = memo(
                               ctx.setMemberModalId(spouseData.person.id);
                             }}
                             className={`flex flex-col items-center gap-1 bg-stone-50/50 hover:bg-white rounded-xl p-1.5 border border-stone-200/60 hover:border-amber-300 transition-all shadow-sm hover:shadow-md group/spouse cursor-pointer
-                            ${spouseData.person.is_deceased ? "opacity-80 grayscale-[0.3]" : ""}`}
+                            ${spouseData.person.is_deceased ? "opacity-70 grayscale" : ""}`}
                             title={
                               spouseData.note ||
                               (spouseData.person.gender === "male"

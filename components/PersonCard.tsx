@@ -37,6 +37,7 @@ export default function PersonCard({ person }: PersonCardProps) {
         <div className="relative">
           <div
             className={`h-14 w-14 sm:h-16 sm:w-16 rounded-full flex items-center justify-center text-xl font-bold text-white overflow-hidden shrink-0 shadow-lg ring-2 ring-white transition-transform duration-300 group-hover:scale-105
+            ${isDeceased ? "grayscale opacity-70" : ""}
             ${person.gender === "male" ? "bg-linear-to-br from-sky-400 to-sky-700" : person.gender === "female" ? "bg-linear-to-br from-rose-400 to-rose-700" : "bg-linear-to-br from-stone-400 to-stone-600"}`}
           >
             {person.avatar_url ? (

@@ -418,7 +418,7 @@ export default function DashboardMemberList({
                                 )
                                 .filter(Boolean) as Person[];
                               const parentNames = parents
-                                .map((p) => p.full_name)
+                                .map((p) => p.full_name.trim().split(" ").splice(-2).join(" "))
                                 .join(" & ");
 
                               const label = parentNames

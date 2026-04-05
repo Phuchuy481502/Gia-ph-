@@ -1,4 +1,3 @@
-import Footer from "@/components/Footer";
 import { promises as fs } from "fs";
 import { ArrowLeft, Database, Play } from "lucide-react";
 import Link from "next/link";
@@ -111,7 +110,6 @@ export default async function SetupPage() {
         Quay lại Đăng nhập
       </Link>
 
-      <Footer className="bg-transparent border-none mt-auto relative z-10" />
     </div>
   );
 }

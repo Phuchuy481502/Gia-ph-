@@ -1,6 +1,5 @@
 "use client";
 
-import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
 import { ArrowLeft, Database, Settings, Terminal } from "lucide-react";
 import Link from "next/link";
@@ -102,7 +101,6 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your_supabase_anon_key`}
         Trang chủ
       </Link>
 
-      <Footer className="bg-transparent border-none mt-auto relative z-10" />
     </div>
   );
 }

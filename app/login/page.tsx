@@ -1,7 +1,6 @@
 "use client";
 
 import config from "@/app/config";
-import Footer from "@/components/Footer";
 import { createClient } from "@/utils/supabase/client";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -361,7 +360,6 @@ export default function LoginPage() {
         Giới thiệu
       </Link>
 
-      <Footer className="bg-transparent relative z-10 border-none mt-auto" />
     </div>
   );
 }

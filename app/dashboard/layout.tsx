@@ -1,6 +1,5 @@
 import config from "@/app/config";
 import DashboardHeader from "@/components/DashboardHeader";
-import Footer from "@/components/Footer";
 import LogoutButton from "@/components/LogoutButton";
 import { UserProvider } from "@/components/UserProvider";
 import { getProfile, getUser } from "@/utils/supabase/queries";
@@ -69,7 +68,6 @@ export default async function DashboardLayout({
             </p>
           </div>
         </main>
-        <Footer className="mt-auto bg-white border-t border-stone-200" />
       </div>
     );
   }
@@ -79,10 +77,6 @@ export default async function DashboardLayout({
       <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col font-sans">
         <DashboardHeader />
         {children}
-        <Footer
-          className="mt-auto bg-white border-t border-stone-200"
-          showDisclaimer={true}
-        />
       </div>
     </UserProvider>
   );

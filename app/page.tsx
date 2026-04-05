@@ -1,4 +1,3 @@
-import Footer from "@/components/Footer";
 import LandingHero from "@/components/LandingHero";
 import config from "./config";
 
@@ -18,7 +17,6 @@ export default function HomePage() {
         <LandingHero siteName={config.siteName} />
       </main>
 
-      <Footer className="bg-transparent relative z-10 border-none" />
     </div>
   );
 }
